@@ -2,14 +2,14 @@
 
 namespace Oucc.AotCsv.ConsoleApp.GeneratedCodeTarget;
 
-internal partial class SampleModel : ICsvParsable<SampleModel>
+internal partial class SampleModel : ICsvSerializable<SampleModel>
 {
-    static bool ICsvParsable<SampleModel>.TryParse(CsvParser reader, out SampleModel value)
+    static bool ICsvSerializable<SampleModel>.TryParse(CsvParser reader, out SampleModel value)
     {
         throw new NotImplementedException();
     }
 
-    static bool ICsvParsable<SampleModel>.TryWrite(CsvWriter reader, SampleModel value)
+    static bool ICsvSerializable<SampleModel>.TryWrite(CsvWriter reader, SampleModel value)
     {
         throw new NotImplementedException();
     }

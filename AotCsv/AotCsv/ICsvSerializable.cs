@@ -2,7 +2,7 @@
 
 namespace Oucc.AotCsv;
 
-public interface ICsvParsable<T> where T : ICsvParsable<T>
+public interface ICsvSerializable<T> where T : ICsvSerializable<T>
 {
     static abstract bool TryParse(CsvParser reader, out T value);
 

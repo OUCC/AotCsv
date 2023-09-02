@@ -16,7 +16,7 @@ public class CsvReader
         Culture = culture;
     }
 
-    public IEnumerable<T> GetRecords<T>() where T : ICsvParsable<T>
+    public IEnumerable<T> GetRecords<T>() where T : ICsvSerializable<T>
     {
         while (T.TryParse(_parser, out var result))
         {
