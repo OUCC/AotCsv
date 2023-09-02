@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AotCsv.Package", "AotCsv\Ao
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AotCsv.Test", "AotCsv\AotCsv.Test\AotCsv.Test.csproj", "{8E7951DD-A2D4-48C4-9EB8-AC0AD6452AF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AotCsv", "AotCsv\AotCsv\AotCsv.csproj", "{BECBD7AC-595B-4612-BCB1-54840536DD1B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AotCsv", "AotCsv\AotCsv\AotCsv.csproj", "{BECBD7AC-595B-4612-BCB1-54840536DD1B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AotCsv.ConsoleApp", "AotCsv.ConsoleApp\AotCsv.ConsoleApp.csproj", "{F8092B51-A23B-4651-9292-DF9F720B0F7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,10 @@ Global
 		{BECBD7AC-595B-4612-BCB1-54840536DD1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BECBD7AC-595B-4612-BCB1-54840536DD1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BECBD7AC-595B-4612-BCB1-54840536DD1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8092B51-A23B-4651-9292-DF9F720B0F7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8092B51-A23B-4651-9292-DF9F720B0F7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8092B51-A23B-4651-9292-DF9F720B0F7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8092B51-A23B-4651-9292-DF9F720B0F7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
