@@ -6,14 +6,17 @@ namespace Oucc.AotCsv;
 public class CsvReader
 {
     private CsvParser _parser;
-    public CultureInfo Culture { get; }
 
-    public CsvReader(TextReader reader, CultureInfo cultureInfo) : this(new CsvParser(reader, cultureInfo), cultureInfo) { }
+    public CsvDeserializeConfig Config { get; }
 
-    private CsvReader(CsvParser parser, CultureInfo culture)
+    public CsvReader(TextReader reader, CultureInfo cultureInfo) : this(reader,new CsvDeserializeConfig(cultureInfo)) { }
+
+    public CsvReader(TextReader reader, CsvDeserializeConfig config) : this(new CsvParser(reader, config), config) { }
+
+    private CsvReader(CsvParser parser, CsvDeserializeConfig config)
     {
         _parser = parser;
-        Culture = culture;
+        Config = config;
     }
 
     public IEnumerable<T> GetRecords<T>() where T : ICsvSerializable<T>

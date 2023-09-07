@@ -10,7 +10,7 @@ internal partial class SampleModel
     [CsvName("名")]
     public required string FirstName { get; init; }
 
-    public string? MiddleName { get; private set; }
+    public string? MiddleName { private get; set; }
 
     [CsvName("姓")]
     public required string LastName { get; init; }

@@ -1,44 +1,33 @@
 ﻿using System.Buffers;
+using System.Collections.Immutable;
 using System.Globalization;
 
 namespace Oucc.AotCsv.GeneratorHelpers;
 
 public class CsvParser
 {
-    // 131072 byte
-    private const int ReadBlock = 65536;
+    // 32768 byte
+    private const int ReadBlock = 16384;
     private readonly TextReader _reader;
-    private readonly CultureInfo _culture;
+    public CsvDeserializeConfig Config { get; }
 
-    private char[]? _buffer;
+    private char[] _buffer;
     private int _bufferOffset;
     private int _bufferLength;
 
-    internal CsvParser(TextReader reader, CultureInfo culture)
+    public ImmutableArray<int> ColumnMap { get; } = default!;
+    public int ColumnCount { get; }
+
+    internal CsvParser(TextReader reader, CsvDeserializeConfig config)
     {
+        _buffer = ArrayPool<char>.Shared.Rent(ReadBlock);
         _reader = reader;
-        _culture = culture;
+        Config = config;
     }
 
     public FieldState TryGetLine(out ReadOnlySpan<char> line)
     {
-        Span<char> spanBuffer;
-        if (_buffer is null)
-        {
-            spanBuffer = _buffer = ArrayPool<char>.Shared.Rent(ReadBlock);
-            _bufferOffset = 0;
-            _bufferLength = _reader.Read(spanBuffer);
-            if (_bufferLength == 0)
-            {
-                line = default;
-                return FieldState.NoLine;
-            }
-            spanBuffer = spanBuffer[.._bufferLength];
-        }
-        else
-        {
-            spanBuffer = _buffer.AsSpan()[_bufferOffset.._bufferLength];
-        }
+        Span<char> spanBuffer = _buffer.Length == _bufferOffset ? default : _buffer.AsSpan()[_bufferOffset.._bufferLength];
 
         var endLinePosition = spanBuffer.IndexOfAny('\r', '\n');
         var noLine = false;
@@ -68,46 +57,44 @@ public class CsvParser
 
     private bool TryRead()
     {
-        if (_buffer is null)
+        Span<char> currentBuffer = _buffer.Length == _bufferOffset ? default : _buffer.AsSpan()[_bufferOffset.._bufferLength];
+        if (_bufferOffset >= currentBuffer.Length && _bufferOffset != _buffer.Length && _buffer.Length < ReadBlock)
         {
-            Span<char> spanBuffer = _buffer = ArrayPool<char>.Shared.Rent(ReadBlock);
-            _bufferOffset = 0;
-            _bufferLength = _reader.Read(spanBuffer);
+            var span = _buffer.AsSpan();
+            currentBuffer.CopyTo(span);
 
-            return _bufferLength != 0;
+            var readLength = _reader.Read(span[currentBuffer.Length..]);
+            _bufferLength = readLength + currentBuffer.Length;
+            _bufferOffset = 0;
+            return readLength != 0;
+        }
+        else if (currentBuffer.Length < ReadBlock / 4 * 3)
+        {
+            var nextBuffer = ArrayPool<char>.Shared.Rent(ReadBlock);
+            var span = nextBuffer.AsSpan();
+
+            currentBuffer.CopyTo(span);
+            var readLength = _reader.Read(span[currentBuffer.Length..]);
+            _bufferLength = currentBuffer.Length + readLength;
+
+            ArrayPool<char>.Shared.Return(_buffer);
+            _buffer = nextBuffer;
+            _bufferOffset = 0;
+            return readLength != 0;
         }
         else
         {
-            Span<char> currentBuffer = _buffer.AsSpan()[_bufferOffset.._bufferLength];
-            if (currentBuffer.Length < ReadBlock)
-            {
-                var nextBuffer = ArrayPool<char>.Shared.Rent(ReadBlock);
-                var span = nextBuffer.AsSpan();
+            var nextBuffer = ArrayPool<char>.Shared.Rent(currentBuffer.Length + ReadBlock);
+            var span = nextBuffer.AsSpan();
 
-                currentBuffer.CopyTo(span);
-                var readLength = _reader.Read(span[currentBuffer.Length..]);
-                _bufferLength = currentBuffer.Length + readLength;
+            currentBuffer.CopyTo(span);
+            var readLength = _reader.Read(span[currentBuffer.Length..]);
+            _bufferLength = currentBuffer.Length + readLength;
 
-                ArrayPool<char>.Shared.Return(_buffer);
-                _buffer = nextBuffer;
-                _bufferOffset = 0;
-                return readLength != 0;
-            }
-            else
-            {
-                var nextBuffer = ArrayPool<char>.Shared.Rent(currentBuffer.Length + ReadBlock);
-                var span = nextBuffer.AsSpan();
-
-                currentBuffer.CopyTo(span);
-                var readLength = _reader.Read(span[currentBuffer.Length..]);
-                _bufferLength = currentBuffer.Length + readLength;
-
-                ArrayPool<char>.Shared.Return(_buffer);
-                _buffer = nextBuffer;
-                _bufferOffset = 0;
-                return readLength != 0;
-            }
+            ArrayPool<char>.Shared.Return(_buffer);
+            _buffer = nextBuffer;
+            _bufferOffset = 0;
+            return readLength != 0;
         }
     }
-
 }

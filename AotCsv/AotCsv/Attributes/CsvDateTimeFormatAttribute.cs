@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Oucc.AotCsv.Attributes;
 
@@ -7,7 +8,7 @@ public sealed class CsvDateTimeFormatAttribute : Attribute
 {
     public string DateFormat { get; }
 
-    public CsvDateTimeFormatAttribute([StringSyntax(StringSyntaxAttribute.DateTimeFormat)] string dateFormat)
+    public CsvDateTimeFormatAttribute([StringSyntax(StringSyntaxAttribute.DateTimeFormat)] string dateFormat, DateTimeStyles dateTimeStyles = DateTimeStyles.None)
     {
         DateFormat = dateFormat;
     }
