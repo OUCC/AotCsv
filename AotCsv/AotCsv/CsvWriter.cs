@@ -1,6 +1,4 @@
-﻿using Oucc.AotCsv.GeneratorHelpers;
-
-namespace Oucc.AotCsv;
+﻿namespace Oucc.AotCsv;
 
 public class CsvWriter
 {

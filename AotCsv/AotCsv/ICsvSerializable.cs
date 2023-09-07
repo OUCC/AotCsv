@@ -4,7 +4,7 @@ namespace Oucc.AotCsv;
 
 public interface ICsvSerializable<T> where T : ICsvSerializable<T>
 {
-    static abstract bool TryParse(CsvParser reader, out T value);
+    //static abstract bool TryParse(CsvParser reader, out T value);
 
     static abstract void WriteRecord(TextWriter writer, CsvSerializeConfig context, T value);
 

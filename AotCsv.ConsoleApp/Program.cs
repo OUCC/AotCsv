@@ -15,8 +15,8 @@ using var ms = new MemoryStream();
 using var writer = new StreamWriter(ms, Encoding.Unicode);
 var config = new CsvSerializeConfig(CultureInfo.InvariantCulture);
 var csvWriter = new CsvWriter(writer,config);
-csvWriter.WriteHeader<SampleModel>();
-csvWriter.WriteRecords(sampleModels);
+//csvWriter.WriteHeader<SampleModel>();
+//csvWriter.WriteRecords(sampleModels);
 writer.Flush();
 
 Console.WriteLine(Encoding.Unicode.GetString(ms.ToArray()));
