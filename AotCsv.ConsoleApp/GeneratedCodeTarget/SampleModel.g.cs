@@ -160,7 +160,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
 file class HelperConst
 {
-    // If your target CPU is ARM, this value should be 256 and if the CPU is ARM64 or LOONGARCH64, it should be nuint.MaxValue. 
+    // If your target CPU is ARM, this value should be 256 and if the CPU is ARM64 or LOONGARCH64, it should be nuint.MaxValue/2. 
     // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Buffer.Unix.cs
     internal const int BufferLength = 1024;
 
