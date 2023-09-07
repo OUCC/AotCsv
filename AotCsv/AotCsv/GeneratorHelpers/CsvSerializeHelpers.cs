@@ -63,13 +63,12 @@ public class CsvSerializeHelpers
     }
 
     /// <summary>
-    /// 与えられた配列を二倍の長さにする
+    /// 与えられた配列を二倍の長さにする。拡大する際に元の値は保持されないので注意
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ResizeBuffer(ref char[] buffer)
+    public static void EnsureBuffer(ref char[] buffer)
     {
         var tmp2 = ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-        buffer.AsSpan().CopyTo(tmp2);
         ArrayPool<char>.Shared.Return(buffer);
         buffer = tmp2;
     }

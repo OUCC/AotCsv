@@ -49,7 +49,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
                 var tmp = ArrayPool<char>.Shared.Rent(buffer.Length * 2);
                 while (!value.Id.TryFormat(tmp, out charsWritten, provider: config.CultureInfo))
                 {
-                    CsvSerializeHelpers.ResizeBuffer(ref tmp);
+                    CsvSerializeHelpers.EnsureBuffer(ref tmp);
                 }
                 CsvSerializeHelpers.WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
                 ArrayPool<char>.Shared.Return(tmp);
@@ -85,7 +85,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
                 var tmp = ArrayPool<char>.Shared.Rent(HelperConst.BufferLength * 2);
                 while (!value.BirthDay.TryFormat(tmp, out charsWritten, HelperConst.BirthDayFormat, config.CultureInfo))
                 {
-                    CsvSerializeHelpers.ResizeBuffer(ref tmp);
+                    CsvSerializeHelpers.EnsureBuffer(ref tmp);
                 }
                 CsvSerializeHelpers.WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
                 ArrayPool<char>.Shared.Return(tmp);
