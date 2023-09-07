@@ -26,59 +26,6 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
     static void ICsvSerializable<SampleModel>.WriteRecord(TextWriter writer, CsvSerializeConfig config, SampleModel value)
     {
-        // この属性はベンチマーク取ってつけるかつけないかを決める（おそらくメソッドが大きくてインライン化されない）
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void WriteWithCheck(TextWriter writer, ReadOnlySpan<char> buffer, CsvSerializeConfig config, int writtenChars)
-        {
-            int nextIndex = buffer[..writtenChars].IndexOfAny("\r\n,\"");
-            if (nextIndex == -1)
-            {
-                if (config.QuoteOption == QuoteOption.MustQuote)
-                {
-                    writer.Write('"');
-                    writer.Write(buffer[..writtenChars]);
-                    writer.Write('"');
-                }
-                else
-                {
-                    writer.Write(buffer[..writtenChars]);
-                }
-            }
-            else if (config.QuoteOption == QuoteOption.ShouldQuote)
-            {
-                int writtenIndex = 0;
-                int index = 0;
-                writer.Write('"');
-                while (true)
-                {
-                    if (buffer[nextIndex] == '\r' || buffer[nextIndex] == '\n')
-                    {
-                        nextIndex++;
-                        if (nextIndex < buffer.Length && buffer[nextIndex] == '\n') nextIndex++;
-                    }
-                    else if (buffer[nextIndex] == ',')
-                    {
-                        nextIndex++;
-                    }
-                    else
-                    {
-                        writer.Write(buffer[writtenIndex..++nextIndex]);
-                        writer.Write('"');
-                        writtenIndex = nextIndex;
-                    }
-                    index = buffer[nextIndex..writtenChars].IndexOfAny("\r\n,\"");
-                    if (index == -1) break;
-                    nextIndex += index;
-                }
-                writer.Write(buffer[writtenIndex..writtenChars]);
-                writer.Write('"');
-            }
-            else
-            {
-                AotCsvException.ThrowMustNoQuoteException();
-            }
-        }
-
         var buffer = ArrayPool<char>.Shared.Rent(HelperConst.BufferLength);
         var bufferSpan = buffer.AsSpan()[..HelperConst.BufferLength];
         var charsWritten = 0;
@@ -94,7 +41,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
             // ID
             if (value.Id.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
             {
-                WriteWithCheck(writer, bufferSpan, config, charsWritten);
+                CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
             }
             else
             {
@@ -102,51 +49,45 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
                 var tmp = ArrayPool<char>.Shared.Rent(buffer.Length * 2);
                 while (!value.Id.TryFormat(tmp, out charsWritten, provider: config.CultureInfo))
                 {
-                    var tmp2 = ArrayPool<char>.Shared.Rent(tmp.Length * 2);
-                    tmp.AsSpan().CopyTo(tmp2);
-                    ArrayPool<char>.Shared.Return(tmp);
-                    tmp = tmp2;
+                    CsvSerializeHelpers.ResizeBuffer(ref tmp);
                 }
-                WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
+                CsvSerializeHelpers.WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
                 ArrayPool<char>.Shared.Return(tmp);
             }
             writer.Write(',');
 
             //FirstName
-            WriteWithCheck(writer, value.FirstName.AsSpan(), config, value.FirstName.Length);
+            CsvSerializeHelpers.WriteWithCheck(writer, value.FirstName.AsSpan(), config, value.FirstName.Length);
             writer.Write(',');
 
             //LastName
-            WriteWithCheck(writer, value.LastName.AsSpan(), config, value.LastName.Length);
+            CsvSerializeHelpers.WriteWithCheck(writer, value.LastName.AsSpan(), config, value.LastName.Length);
             writer.Write(',');
 
             //MiddleName
             if (value.MiddleName is not null)
             {
-                WriteWithCheck(writer, value.MiddleName.AsSpan(), config, value.MiddleName.Length);
+                CsvSerializeHelpers.WriteWithCheck(writer, value.MiddleName.AsSpan(), config, value.MiddleName.Length);
             }
             else
             {
-                WriteWithCheck(writer, default, config, 0);
+                CsvSerializeHelpers.WriteWithCheck(writer, default, config, 0);
             }
             writer.Write(',');
 
             // BirthDay
             if (value.BirthDay.TryFormat(bufferSpan, out charsWritten, HelperConst.BirthDayFormat, config.CultureInfo))
             {
-                WriteWithCheck(writer, bufferSpan, config, charsWritten);
+                CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
             }
             else
             {
                 var tmp = ArrayPool<char>.Shared.Rent(HelperConst.BufferLength * 2);
                 while (!value.BirthDay.TryFormat(tmp, out charsWritten, HelperConst.BirthDayFormat, config.CultureInfo))
                 {
-                    var tmp2 = ArrayPool<char>.Shared.Rent(tmp.Length * 2);
-                    tmp.AsSpan().CopyTo(tmp2);
-                    ArrayPool<char>.Shared.Return(tmp);
-                    tmp = tmp2;
+                    CsvSerializeHelpers.ResizeBuffer(ref tmp);
                 }
-                WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
+                CsvSerializeHelpers.WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
                 ArrayPool<char>.Shared.Return(tmp);
             }
             writer.WriteLine();
