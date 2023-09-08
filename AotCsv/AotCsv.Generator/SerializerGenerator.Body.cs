@@ -9,10 +9,12 @@ public partial class SerializerGenerator
 {
     private static void CreateBodyCode(StringBuilder builder, INamedTypeSymbol targetSymbol, ISymbol[] targetMemberSymbols, ReferenceSymbols reference)
     {
+#if DEBUG
         if (targetMemberSymbols.Length == 0)
         {
             targetMemberSymbols = targetSymbol.GetMembers().Where(x => !x.IsImplicitlyDeclared && x is IPropertySymbol or IFieldSymbol).ToArray();
         }
+#endif
 
         builder.Append("""
 
@@ -46,11 +48,11 @@ public partial class SerializerGenerator
                 var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
                 if (typeParameter.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, symbol, reference, true, typeParameter.Name);
+                    DateTimeSerializeCodegen(builder, symbol, reference, true, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
                 }
                 else if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
-                    NullableIStructSpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.Name);
+                    NullableIStructSpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
                 }
             }
             else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated && typeSymbol.TypeKind == TypeKind.Class)
