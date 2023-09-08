@@ -48,7 +48,7 @@ public partial class SerializerGenerator
                     NullableStringSerializeCodegen(builder, symbol.Name);
                 }
             }
-            else if (typeSymbol.NullableAnnotation == NullableAnnotation.Annotated || (typeSymbol.NullableAnnotation == NullableAnnotation.None && typeSymbol.TypeKind == TypeKind.Class))
+            else if (typeSymbol.NullableAnnotation == NullableAnnotation.Annotated && typeSymbol.TypeKind == TypeKind.Struct)
             {
                 var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
                 if (typeParameter.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
@@ -57,8 +57,12 @@ public partial class SerializerGenerator
                 }
                 else if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
-                    NullableISpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.Name);
+                    NullableIStructSpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.Name);
                 }
+            }
+            else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated && typeSymbol.TypeKind == TypeKind.Class)
+            {
+                NullableIClassSpanFormattableSerializeCodegen(builder, symbol.Name);
             }
             else
             {
@@ -101,7 +105,7 @@ public partial class SerializerGenerator
         {
             if (nullable)
             {
-                NullableISpanFormattableSerializeCodegen(builder, propertySymbol.Name, type);
+                NullableIStructSpanFormattableSerializeCodegen(builder, propertySymbol.Name, type);
             }
             else ISpanFormattableSerializeCodegen(builder, propertySymbol.Name);
         }
@@ -197,7 +201,37 @@ public partial class SerializerGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void NullableISpanFormattableSerializeCodegen(StringBuilder builder, string name, string type)
+    private static void NullableIClassSpanFormattableSerializeCodegen(StringBuilder builder, string name)
+    {
+        builder.AppendFormatted($$"""
+
+                        if (value.{{name}} is not null)
+                        {
+                            if (value.{{name}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                            {
+                                global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
+                            }
+                            else
+                            {
+                                char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
+                                while (!value.{{name}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
+                                {
+                                    global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
+                                }
+                                global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
+                                global::System.Buffers.ArrayPool<char>.Shared.Return(tmp);
+                            }
+                        }
+                        else
+                        {
+                            global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, default, config, 0);
+                        }
+
+            """);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void NullableIStructSpanFormattableSerializeCodegen(StringBuilder builder, string name, string type)
     {
         builder.AppendFormatted($$"""
 
