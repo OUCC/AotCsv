@@ -7,7 +7,7 @@ namespace Oucc.AotCsv.Generator;
 
 public partial class SerializerGenerator
 {
-    private void CreateHeaderCode(StringBuilder builder, INamedTypeSymbol targetSymbol)
+    private static void CreateHeaderCode(StringBuilder builder, INamedTypeSymbol targetSymbol)
     {
 
     }
