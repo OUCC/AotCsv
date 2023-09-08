@@ -189,7 +189,7 @@ public partial class SerializerGenerator
                         else
                         {
                             char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                            while (!value.{{name}}.TryFormat(tmp, out charsWritten, provider: config.CultureInfo))
+                            while (!value.{{name}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                             }
