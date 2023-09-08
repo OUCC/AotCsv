@@ -27,7 +27,7 @@ public class CsvSerializeHelpers
                 writer.Write(buffer[..writtenChars]);
             }
         }
-        else if (config.QuoteOption == QuoteOption.ShouldQuote)
+        else if (config.QuoteOption != QuoteOption.MustNoQuote)
         {
             int writtenIndex = 0;
             int index = 0;
