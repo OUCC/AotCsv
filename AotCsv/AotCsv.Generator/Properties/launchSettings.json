@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AotCsv.Generator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\AotCsv.ConsoleApp\\AotCsv.ConsoleApp.csproj"
+    }
+  }
+}

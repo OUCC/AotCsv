@@ -18,7 +18,7 @@ public partial class SerializerGenerator : IIncrementalGenerator
 
         var source = attributeContext.Combine(context.CompilationProvider);
 
-        context.RegisterSourceOutput(source, static ( context, source ) =>
+        context.RegisterSourceOutput(source, static (context, source) =>
         {
             var (attributeContext, compilation) = source;
 
@@ -47,9 +47,10 @@ public partial class SerializerGenerator : IIncrementalGenerator
             {
                 static void global::Oucc.AotCsv.ICsvSerializable<{{targetSymbol.Name}}>.WriteHeader(global::System.IO.TextWriter writer, global::Oucc.AotCsv.CsvSerializeConfig context)
                 {
+
             """);
 
-        CreateHeaderCode(builder, targetSymbol);
+        var targets = CreateHeaderCode(builder, targetSymbol, reference);
 
         builder.AppendFormatted($$"""
                 }
@@ -58,7 +59,7 @@ public partial class SerializerGenerator : IIncrementalGenerator
                 {
             """);
 
-        CreateBodyCode(builder, targetSymbol, new ISymbol[0], reference);
+        CreateBodyCode(builder, targetSymbol, targets, reference);
 
         builder.Append("""
                 }
