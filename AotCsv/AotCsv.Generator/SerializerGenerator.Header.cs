@@ -69,7 +69,7 @@ public partial class SerializerGenerator
             // デフォルトの条件
             && (property.DeclaredAccessibility == Accessibility.Public && !property.IsReadOnly
                 // 属性がついていたとき
-                || property.GetAttributes().Any(a => a.AttributeClass?.ToString() == "Oucc.AotCsv.Attributes.CsvIncludeAttribute"));
+                || property.GetAttributes().Any(a => reference.CsvIncludeAttribute.Equals(a.AttributeClass, SymbolEqualityComparer.Default)));
     }
 
 
@@ -81,7 +81,7 @@ public partial class SerializerGenerator
             // デフォルトの条件
             && (field.DeclaredAccessibility == Accessibility.Public && !field.IsReadOnly
                 // 属性がついていたとき
-                || field.GetAttributes().Any(a => a.AttributeClass?.ToString() == "Oucc.AotCsv.Attributes.CsvIncludeAttribute"));
+                || field.GetAttributes().Any(a => reference.CsvIncludeAttribute.Equals(a.AttributeClass, SymbolEqualityComparer.Default)));
     }
 
     private static bool IsTargetType(ITypeSymbol type, ReferenceSymbols reference)

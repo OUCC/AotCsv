@@ -11,27 +11,29 @@ internal class ReferenceSymbols
 {
     public Compilation Compilation { get; }
 
-    internal INamedTypeSymbol ISpanFormattable { get; private set; }
-    internal INamedTypeSymbol IFormattable { get; private set; }
-    internal INamedTypeSymbol Nullable_T { get; private set; }
-    internal INamedTypeSymbol DateTime { get; private set; }
-    internal INamedTypeSymbol String { get; private set; }
-    internal INamedTypeSymbol CsvDateTimeFormatAttribute { get; private set; }
+    internal INamedTypeSymbol ISpanFormattable { get; }
+    internal INamedTypeSymbol IFormattable { get; }
+    internal INamedTypeSymbol Nullable_T { get; }
+    internal INamedTypeSymbol DateTime { get; }
+    internal INamedTypeSymbol String { get; }
+    internal INamedTypeSymbol CsvDateTimeFormatAttribute { get; }
+    internal INamedTypeSymbol CsvIncludeAttribute { get; }
 
     internal ReferenceSymbols(Compilation compilation)
     {
         Compilation = compilation;
-        ISpanFormattable = GetTypeByMetadataName("System.ISpanFormattable");
-        IFormattable = GetTypeByMetadataName("System.IFormattable");
-        Nullable_T = GetTypeByMetadataName("System.Nullable`1").ConstructUnboundGenericType();
-        DateTime = GetTypeByMetadataName("System.DateTime");
-        String = GetTypeByMetadataName("System.String");
-        CsvDateTimeFormatAttribute = GetTypeByMetadataName("Oucc.AotCsv.Attributes.CsvDateTimeFormatAttribute");
+        ISpanFormattable = GetTypeByMetadataName(compilation, "System.ISpanFormattable");
+        IFormattable = GetTypeByMetadataName(compilation, "System.IFormattable");
+        Nullable_T = GetTypeByMetadataName(compilation, "System.Nullable`1").ConstructUnboundGenericType();
+        DateTime = GetTypeByMetadataName(compilation, "System.DateTime");
+        String = GetTypeByMetadataName(compilation, "System.String");
+        CsvDateTimeFormatAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvDateTimeFormatAttribute");
+        CsvIncludeAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvIncludeAttribute");
     }
 
-    INamedTypeSymbol GetTypeByMetadataName(string metadataName)
+    private static INamedTypeSymbol GetTypeByMetadataName(Compilation compilation, string metadataName)
     {
-        var symbol = Compilation.GetTypeByMetadataName(metadataName);
+        var symbol = compilation.GetTypeByMetadataName(metadataName);
         if (symbol == null)
         {
             throw new InvalidOperationException($"Type {metadataName} is not found in compilation.");
