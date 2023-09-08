@@ -66,6 +66,7 @@ public partial class SerializerGenerator
         return
             // 必須条件
             !property.IsStatic && !property.IsWriteOnly && !property.IsIndexer && IsTargetType(property.Type, reference)
+            && property.GetAttributes().All(a => !reference.CsvIgnoreAttribute.Equals(a.AttributeClass, SymbolEqualityComparer.Default))
             // デフォルトの条件
             && (property.DeclaredAccessibility == Accessibility.Public && !property.IsReadOnly
                 // 属性がついていたとき
@@ -78,6 +79,7 @@ public partial class SerializerGenerator
         return
             // 必須条件
             !field.IsStatic && IsTargetType(field.Type, reference)
+            && field.GetAttributes().All(a => !reference.CsvIgnoreAttribute.Equals(a.AttributeClass, SymbolEqualityComparer.Default))
             // デフォルトの条件
             && (field.DeclaredAccessibility == Accessibility.Public && !field.IsReadOnly
                 // 属性がついていたとき
@@ -86,6 +88,6 @@ public partial class SerializerGenerator
 
     private static bool IsTargetType(ITypeSymbol type, ReferenceSymbols reference)
     {
-        return type.Equals(reference.ISpanFormattable, SymbolEqualityComparer.Default);
+        return type.AllInterfaces.Contains(reference.ISpanFormattable) || type.Equals(reference.String, SymbolEqualityComparer.Default);
     }
 }

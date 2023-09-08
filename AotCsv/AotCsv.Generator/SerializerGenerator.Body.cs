@@ -17,7 +17,7 @@ public partial class SerializerGenerator
         builder.Append("""
 
                     char[] buffer = global::System.Buffers.ArrayPool<char>.Shared.Rent(1024);
-                    Span<char> bufferSpan = buffer.AsSpan()[..1024];
+                    global::System.Span<char> bufferSpan = buffer.AsSpan()[..1024];
                     int charsWritten = 0;
                     try
                     {
@@ -39,14 +39,7 @@ public partial class SerializerGenerator
 
             if (typeSymbol.Equals(reference.String, SymbolEqualityComparer.Default))
             {
-                if (typeSymbol.NullableAnnotation == NullableAnnotation.NotAnnotated)
-                {
-                    StringSerializeCodegen(builder, symbol.Name);
-                }
-                else
-                {
-                    NullableStringSerializeCodegen(builder, symbol.Name);
-                }
+                NullableStringSerializeCodegen(builder, symbol.Name);
             }
             else if (typeSymbol.NullableAnnotation == NullableAnnotation.Annotated && typeSymbol.TypeKind == TypeKind.Struct)
             {

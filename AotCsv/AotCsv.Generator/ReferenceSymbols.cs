@@ -18,6 +18,7 @@ internal class ReferenceSymbols
     internal INamedTypeSymbol String { get; }
     internal INamedTypeSymbol CsvDateTimeFormatAttribute { get; }
     internal INamedTypeSymbol CsvIncludeAttribute { get; }
+    internal INamedTypeSymbol CsvIgnoreAttribute { get; }
 
     internal ReferenceSymbols(Compilation compilation)
     {
@@ -29,6 +30,7 @@ internal class ReferenceSymbols
         String = GetTypeByMetadataName(compilation, "System.String");
         CsvDateTimeFormatAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvDateTimeFormatAttribute");
         CsvIncludeAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvIncludeAttribute");
+        CsvIgnoreAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvIgnoreAttribute");
     }
 
     private static INamedTypeSymbol GetTypeByMetadataName(Compilation compilation, string metadataName)
