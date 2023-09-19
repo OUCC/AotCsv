@@ -36,10 +36,6 @@ internal class ReferenceSymbols
     private static INamedTypeSymbol GetTypeByMetadataName(Compilation compilation, string metadataName)
     {
         var symbol = compilation.GetTypeByMetadataName(metadataName);
-        if (symbol == null)
-        {
-            throw new InvalidOperationException($"Type {metadataName} is not found in compilation.");
-        }
-        return symbol;
+        return symbol is null ? throw new InvalidOperationException($"Type {metadataName} is not found in compilation.") : symbol;
     }
 }
