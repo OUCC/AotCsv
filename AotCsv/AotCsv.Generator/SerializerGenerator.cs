@@ -16,7 +16,7 @@ public partial class SerializerGenerator : IIncrementalGenerator
             static (_, _) => true,
             static (context, _) => context);
 
-        var source = attributeContext.Combine(context.CompilationProvider);
+        var source = attributeContext.Combine(context.CompilationProvider).WithComparer(Comparer.Instance);
 
         context.RegisterSourceOutput(source, static (context, source) =>
         {
@@ -43,7 +43,7 @@ public partial class SerializerGenerator : IIncrementalGenerator
 
         builder.AppendFormatted($$"""
 
-            partial {{(targetSymbol.TypeKind == TypeKind.Class ? "class" : "struct")}} {{targetSymbol.Name}} : global::Oucc.AotCsv.ICsvSerializable<{{targetSymbol.Name}}>
+            partial {{(targetSymbol.IsRecord ? "record " : "")}}{{(targetSymbol.TypeKind == TypeKind.Class ? "class" : "struct")}} {{targetSymbol.Name}} : global::Oucc.AotCsv.ICsvSerializable<{{targetSymbol.Name}}>
             {
                 static void global::Oucc.AotCsv.ICsvSerializable<{{targetSymbol.Name}}>.WriteHeader(global::System.IO.TextWriter writer, global::Oucc.AotCsv.CsvSerializeConfig context)
                 {
@@ -72,7 +72,7 @@ public partial class SerializerGenerator : IIncrementalGenerator
 
     class Comparer : IEqualityComparer<(GeneratorAttributeSyntaxContext, Compilation)>
     {
-        public static readonly Comparer Instance = new Comparer();
+        public static readonly Comparer Instance = new();
 
         public bool Equals((GeneratorAttributeSyntaxContext, Compilation) x, (GeneratorAttributeSyntaxContext, Compilation) y)
         {
