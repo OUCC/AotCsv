@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "AotCsv.ConsoleApp": {
+      "commandName": "Project"
+    }
+  }
+}
