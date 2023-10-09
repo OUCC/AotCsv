@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Microsoft.CodeAnalysis;
+using Oucc.AotCsv.Generator.Comparer;
 using Oucc.AotCsv.Generator.Utility;
 
 namespace Oucc.AotCsv.Generator;
@@ -11,6 +12,8 @@ public partial class SerializerGenerator
         var targetMembers = targetSymbol.GetMembers()
             .Where(m => m is IPropertySymbol p && IsTargetProperty(p, reference)
                 || m is IFieldSymbol f && IsTargetField(f, reference))
+            .OrderBy(m => m.GetAttributes().Select(ad => ad.AttributeClass!.Name).Where(x => x == reference.CsvIndexAttribute.Name || x == reference.CsvNameAttribute.Name).ToList(), AttributeComparer.Instance)
+            .ThenBy(m => m.GetAttributes().Where(ad => ad.AttributeClass!.Equals(reference.CsvIndexAttribute, SymbolEqualityComparer.Default)).Select(ad => (uint)ad.ConstructorArguments[0].Value!).FirstOrDefault())
             .ToArray();
 
         var header = targetMembers.Select(m =>

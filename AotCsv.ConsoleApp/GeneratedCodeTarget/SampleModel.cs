@@ -11,8 +11,11 @@ internal partial class SampleModel
     [CsvName("名")]
     public required string FirstName { get; init; }
 
+    [CsvIndex(2)]
+    [CsvName("MiddleName")]
     public string? MiddleName { get; private set; }
 
+    [CsvIndex(1)]
     [CsvName("姓")]
     public required string LastName { get; init; }
 
@@ -30,7 +33,15 @@ internal partial class SampleModel
         }
     }
 
+    [CsvIndex(2)]
     [CsvDateTimeFormat("yyyy年MM月dd日")]
     public DateTime BirthDay { get; set; }
+
+    [CsvInclude]
+    [CsvIndex(1)]
+    public int Age
+    {
+        get => new DateTime((DateTime.Now - BirthDay).Ticks).Year;
+    }
 
 }
