@@ -13,8 +13,8 @@ var sampleModels = new List<SampleModel>() { sample0, sample1, sample2, sample3 
 using var ms = new MemoryStream();
 using var writer = new StreamWriter(ms, Encoding.Unicode);
 var config = new CsvSerializeConfig(CultureInfo.InvariantCulture);
-var csvWriter = new CsvWriter(writer,config);
-csvWriter.WriteHeader<SampleModel>();
+using var csvWriter = new CsvWriter<SampleModel>(writer,config);
+csvWriter.WriteHeader();
 csvWriter.WriteRecords(sampleModels);
 writer.Flush();
 

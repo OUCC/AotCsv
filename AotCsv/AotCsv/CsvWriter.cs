@@ -1,8 +1,9 @@
 ﻿namespace Oucc.AotCsv;
 
-public class CsvWriter
+public class CsvWriter<T> : IDisposable where T : ICsvSerializable<T>
 {
     public CsvSerializeConfig Context { get; }
+    private bool _disposed = false;
     private TextWriter _writer;
 
     public CsvWriter(TextWriter writer, CsvSerializeConfig context)
@@ -11,7 +12,7 @@ public class CsvWriter
         Context = context;
     }
 
-    public void WriteRecords<T>(IEnumerable<T> records) where T : ICsvSerializable<T>
+    public void WriteRecords(IEnumerable<T> records)
     {
         foreach (var record in records)
         {
@@ -19,8 +20,27 @@ public class CsvWriter
         }
     }
 
-    public void WriteHeader<T>() where T : ICsvSerializable<T>
+    public void WriteHeader() 
     {
         T.WriteHeader(_writer, Context);
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if(!_disposed)
+        {
+            if (disposing)
+            {
+                _writer.Dispose();
+                _writer = TextWriter.Null;
+            }
+            _disposed = true;
+        }
     }
 }
