@@ -16,6 +16,7 @@ internal class ReferenceSymbols
     internal INamedTypeSymbol Nullable_T { get; }
     internal INamedTypeSymbol DateTime { get; }
     internal INamedTypeSymbol String { get; }
+    internal INamedTypeSymbol Boolean { get; }
     internal INamedTypeSymbol CsvDateTimeFormatAttribute { get; }
     internal INamedTypeSymbol CsvIncludeAttribute { get; }
     internal INamedTypeSymbol CsvIgnoreAttribute { get; }
@@ -30,6 +31,7 @@ internal class ReferenceSymbols
         Nullable_T = GetTypeByMetadataName(compilation, "System.Nullable`1").ConstructUnboundGenericType();
         DateTime = GetTypeByMetadataName(compilation, "System.DateTime");
         String = GetTypeByMetadataName(compilation, "System.String");
+        Boolean = GetTypeByMetadataName(compilation, "System.Boolean");
         CsvDateTimeFormatAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvDateTimeFormatAttribute");
         CsvIncludeAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvIncludeAttribute");
         CsvIgnoreAttribute = GetTypeByMetadataName(compilation, "Oucc.AotCsv.Attributes.CsvIgnoreAttribute");

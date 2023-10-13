@@ -44,4 +44,7 @@ internal partial class SampleModel
         get => new DateTime((DateTime.Now - BirthDay).Ticks).Year;
     }
 
+    [CsvInclude]
+    public bool? IsStudent { get; set; }
+
 }

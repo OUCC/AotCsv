@@ -4,10 +4,10 @@ using Oucc.AotCsv;
 using Oucc.AotCsv.ConsoleApp.GeneratedCodeTarget;
 
 Console.WriteLine("Hello, World!");
-var sample0 = new SampleModel() { Id = 0, FirstName = ",", LastName = "a", BirthDay = DateTime.Now };
-var sample1 = new SampleModel() { Id = 1, FirstName = "\"", LastName = "b", BirthDay = DateTime.Now };
-var sample2 = new SampleModel() { Id = 2, FirstName = "\r\n", LastName = "c", BirthDay = DateTime.Now };
-var sample3 = new SampleModel() { Id = 3, FirstName = "\",\r\"\n", LastName = "c", BirthDay = DateTime.Now };
+var sample0 = new SampleModel() { Id = 0, FirstName = ",", LastName = "a", BirthDay = DateTime.Now, IsStudent = false };
+var sample1 = new SampleModel() { Id = 1, FirstName = "\"", LastName = "b", BirthDay = DateTime.Now, IsStudent = true };
+var sample2 = new SampleModel() { Id = 2, FirstName = "\r\n", LastName = "c", BirthDay = DateTime.Now, IsStudent = null };
+var sample3 = new SampleModel() { Id = 3, FirstName = "\",\r\"\n", LastName = "c", BirthDay = DateTime.Now, IsStudent = true };
 var sampleModels = new List<SampleModel>() { sample0, sample1, sample2, sample3 };
 
 using var ms = new MemoryStream();

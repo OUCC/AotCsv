@@ -91,8 +91,17 @@ public partial class SerializerGenerator
 
     private static bool IsTargetType(ITypeSymbol type, ReferenceSymbols reference)
     {
-        return type.NullableAnnotation == NullableAnnotation.Annotated && !type.Equals(reference.String, SymbolEqualityComparer.Default)
-            ? (type as INamedTypeSymbol)!.TypeArguments[0].AllInterfaces.Contains(reference.ISpanFormattable)
-            : type.AllInterfaces.Contains(reference.ISpanFormattable) || type.Equals(reference.String, SymbolEqualityComparer.Default);
+        if (type.NullableAnnotation == NullableAnnotation.Annotated && type.IsValueType)
+        {
+            var typeArgument = (type as INamedTypeSymbol)!.TypeArguments[0];
+            return typeArgument.AllInterfaces.Contains(reference.ISpanFormattable)
+                || typeArgument.Equals(reference.Boolean, SymbolEqualityComparer.Default);// boolのAnnotatedはここで拾う
+        }
+        else
+        {
+            return type.AllInterfaces.Contains(reference.ISpanFormattable)
+                || type.Equals(reference.String, SymbolEqualityComparer.Default)
+                || type.Equals(reference.Boolean, SymbolEqualityComparer.Default);// boolのNotAnnotatedはここで拾える
+        }
     }
 }

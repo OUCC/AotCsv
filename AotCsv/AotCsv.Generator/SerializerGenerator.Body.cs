@@ -50,6 +50,10 @@ public partial class SerializerGenerator
                 {
                     DateTimeSerializeCodegen(builder, symbol, reference, true, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
                 }
+                else if(typeParameter.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
+                {
+                    NullableBooleanSerializeCodegen(builder, symbol.Name);
+                }
                 else if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
                     NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
@@ -68,6 +72,10 @@ public partial class SerializerGenerator
                 if (typeSymbol.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
                     DateTimeSerializeCodegen(builder, symbol, reference, false, "");
+                }
+                else if (typeSymbol.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
+                {
+                    BooleanSerializeCodegen(builder, symbol.Name);
                 }
                 else if (typeSymbol.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
@@ -97,7 +105,40 @@ public partial class SerializerGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void DateTimeSerializeCodegen(StringBuilder builder, ISymbol propertySymbol, ReferenceSymbols reference, bool nullable, string type)
+    private static void NullableBooleanSerializeCodegen(StringBuilder builder, string name)
+    {
+        builder.AppendFormatted($$"""
+        
+                        if (value.{{name}} is not null)
+                        {
+                            if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten))
+                            {
+                                global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
+                            }
+                        }
+                        else
+                        {
+                            global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, default, config, 0);
+                        }
+
+            """);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void BooleanSerializeCodegen(StringBuilder builder, string name)
+    {
+        builder.AppendFormatted($$"""
+
+                        if (value.{{name}}.TryFormat(bufferSpan, out charsWritten))
+                        {
+                            global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
+                        }
+
+            """);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void DateTimeSerializeCodegen(StringBuilder builder, ISymbol propertySymbol, ReferenceSymbols reference, bool nullable)
     {
         var attributes = propertySymbol.GetAttributes();
         if (attributes.IsEmpty)
