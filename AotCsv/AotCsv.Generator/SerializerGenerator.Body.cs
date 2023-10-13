@@ -39,10 +39,12 @@ public partial class SerializerGenerator
             }
             else continue;
 
+            // string(?)の時
             if (typeSymbol.Equals(reference.String, SymbolEqualityComparer.Default))
             {
                 NullableStringSerializeCodegen(builder, symbol.Name);
             }
+            // struct?のとき
             else if (typeSymbol.NullableAnnotation == NullableAnnotation.Annotated && typeSymbol.IsValueType)
             {
                 var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
@@ -50,7 +52,7 @@ public partial class SerializerGenerator
                 {
                     DateTimeSerializeCodegen(builder, symbol, reference, true);
                 }
-                else if(typeParameter.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
+                else if (typeParameter.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
                 {
                     NullableBooleanSerializeCodegen(builder, symbol.Name);
                 }
@@ -59,13 +61,12 @@ public partial class SerializerGenerator
                     NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name);
                 }
             }
-            else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated && typeSymbol.IsReferenceType)
+            // class?のとき
+            else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated
+                     && typeSymbol.IsReferenceType
+                     && typeSymbol.AllInterfaces.Contains(reference.ISpanFormattable))
             {
-                var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
-                if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
-                {
-                    NullableClassISpanFormattableSerializeCodegen(builder, symbol.Name);
-                }
+                NullableClassISpanFormattableSerializeCodegen(builder, symbol.Name);
             }
             else
             {
