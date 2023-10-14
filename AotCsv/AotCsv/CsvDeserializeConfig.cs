@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Globalization;
 
 namespace Oucc.AotCsv;
 
-public record CsvDeserializeConfig(ReadQuote ReadQuote, CultureInfo CultureInfo)
+public record CsvDeserializeConfig(CultureInfo CultureInfo, ReadQuote ReadQuote, bool HasHeader, bool LeaveOpen)
 {
-    public CsvDeserializeConfig(CultureInfo cultureInfo) : this(ReadQuote.Auto, cultureInfo) { }
+    public static CsvDeserializeConfig InvariantCulture { get; } = new CsvDeserializeConfig(CultureInfo.InvariantCulture);
+
+    public CsvDeserializeConfig(CultureInfo cultureInfo) : this(cultureInfo, ReadQuote.Auto, false, false) { }
 }

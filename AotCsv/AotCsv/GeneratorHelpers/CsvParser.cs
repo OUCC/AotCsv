@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace Oucc.AotCsv.GeneratorHelpers;
 
-public class CsvParser
+public sealed class CsvParser : IDisposable
 {
     /// <summary>
     /// new char[] で作成するボーダー
@@ -26,7 +26,9 @@ public class CsvParser
     /// </summary>
     private bool _isRead;
 
-    public ImmutableArray<int> ColumnMap { get; } = default!;
+    private bool _disposed;
+
+    public ImmutableArray<int> ColumnMap { get; internal set; } = default!;
     public int ColumnCount { get; }
 
     public CsvParser(TextReader reader, CsvDeserializeConfig config)
@@ -62,7 +64,7 @@ public class CsvParser
                             case ReadingState.WaitingQuoteOrValue:
                                 if (Config.ReadQuote == ReadQuote.NoQuote)
                                 {
-                                    AotCsvException.Throw();
+                                    AotCsvException.ThrowBaseException();
                                     fieldState = FieldState.NoLine;
                                     return default;
                                 }
@@ -82,7 +84,7 @@ public class CsvParser
                                 fieldState = FieldState.LastField;
                                 return new ArrayContainer(buffer, length);
                             default:
-                                AotCsvException.Throw();
+                                AotCsvException.ThrowBaseException();
                                 fieldState = FieldState.NoLine;
                                 return default;
                         }
@@ -92,7 +94,7 @@ public class CsvParser
                             case ReadingState.WaitingQuoteOrValue:
                                 if (Config.ReadQuote == ReadQuote.HasQuote)
                                 {
-                                    AotCsvException.Throw();
+                                    AotCsvException.ThrowBaseException();
                                     fieldState = FieldState.NoLine;
                                     return default;
                                 }
@@ -117,7 +119,7 @@ public class CsvParser
                                 fieldState = FieldState.HasField;
                                 return new ArrayContainer(buffer, length);
                             default:
-                                AotCsvException.Throw();
+                                AotCsvException.ThrowBaseException();
                                 continue;
                         }
                     case '\r':
@@ -142,7 +144,7 @@ public class CsvParser
                                 state = ReadingState.AfterCR;
                                 continue;
                             default:
-                                AotCsvException.Throw();
+                                AotCsvException.ThrowBaseException();
                                 fieldState = FieldState.NoLine;
                                 return default;
                         }
@@ -170,7 +172,7 @@ public class CsvParser
                                 fieldState = FieldState.LastField;
                                 return new ArrayContainer(buffer, length);
                             default:
-                                AotCsvException.Throw();
+                                AotCsvException.ThrowBaseException();
                                 fieldState = FieldState.NoLine;
                                 return default;
                         }
@@ -180,7 +182,7 @@ public class CsvParser
                             case ReadingState.WaitingQuoteOrValue:
                                 if (Config.ReadQuote == ReadQuote.HasQuote)
                                 {
-                                    AotCsvException.Throw();
+                                    AotCsvException.ThrowBaseException();
                                     fieldState = FieldState.NoLine;
                                     return default;
                                 }
@@ -196,7 +198,7 @@ public class CsvParser
                                 destSpan[length++] = current;
                                 continue;
                             case ReadingState.FirstQuoteInValue:
-                                AotCsvException.Throw();
+                                AotCsvException.ThrowBaseException();
                                 fieldState = FieldState.NoLine;
                                 return default;
                             case ReadingState.AfterCR:
@@ -204,19 +206,19 @@ public class CsvParser
                                 fieldState = FieldState.LastField;
                                 return new ArrayContainer(buffer, length);
                             default:
-                                AotCsvException.Throw();
+                                AotCsvException.ThrowBaseException();
                                 fieldState = FieldState.NoLine;
                                 return default;
                         }
                 }
             }
             _bufferOffset += spanBuffer.Length;
-            
+
             Read();
 
-            if (_isRead &&  _bufferLength == 0)
+            if (_isRead && _bufferLength == 0)
             {
-                fieldState = length != 0 ? FieldState.LastField: FieldState.NoLine;
+                fieldState = length != 0 ? FieldState.LastField : FieldState.NoLine;
                 return new ArrayContainer(buffer, length);
             }
             spanBuffer = _buffer.Length == _bufferOffset ? default : _buffer.AsSpan()[_bufferOffset.._bufferLength];
@@ -277,6 +279,21 @@ public class CsvParser
         contentBuffer.CopyTo(temp);
         ArrayPool<char>.Shared.Return(buffer);
         buffer = temp;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+
+        if (_buffer is not null)
+        {
+            ArrayPool<char>.Shared.Return(_buffer);
+        }
+        if (Config.LeaveOpen)
+        {
+            _reader.Dispose();
+        }
+        _disposed = true;
     }
 
     private enum ReadingState

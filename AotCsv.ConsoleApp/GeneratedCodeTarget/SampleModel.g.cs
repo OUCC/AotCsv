@@ -1,8 +1,11 @@
 ﻿#nullable enable
 using System.Buffers;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Oucc.AotCsv.Exceptions;
 using Oucc.AotCsv.GeneratorHelpers;
 
 namespace Oucc.AotCsv.ConsoleApp.GeneratedCodeTarget;
@@ -10,38 +13,57 @@ namespace Oucc.AotCsv.ConsoleApp.GeneratedCodeTarget;
 internal partial class SampleModel : ICsvSerializable<SampleModel>
 {
 
-    public static bool TryParseHeader(CsvParser parser, [NotNullWhen(true)] out int[]? columnMap)
+    public static void ParseHeader(CsvParser parser, out ImmutableArray<int> columnMap)
     {
-        var state = parser.TryGetLine(out var line);
-        if (line.IsEmpty)
+        if (!parser.Config.HasHeader)
         {
-            columnMap = null;
-            return false;
+            columnMap = ImmutableArray.Create<int>(1, 2, 3, 4, 5);
+            return;
         }
 
-        var buffer = ArrayPool<int>.Shared.Rent(256);
-        try
+        var rawColumnMap = new List<int>(5);
+        var readValidCoulmns = 0;
+
+        while (readValidCoulmns < 5)
         {
-            var leftIndex = 0;
-            while (true)
+            using var field = parser.TryGetField(out var state);
+            if (state == FieldState.NoLine)
             {
-                if ((leftIndex + 1 < line.Length && line[leftIndex + 1] == '"'))
-                    switch (line)
-                    {
-                        case "aa":
-                            break;
-                    }
+                AotCsvException.ThrowBaseException();
+                columnMap = default;
+                return;
+            }
+
+            var value = field.AsSpan() switch
+            {
+                "ID" => 1,
+                "名" => 2,
+                "姓" => 3,
+                "MiddleName" => 4,
+                "BirthDay" => 5,
+                _ => 0
+            };
+            rawColumnMap.Add(value);
+            if (value > 0)
+                readValidCoulmns++;
+
+            if (state == FieldState.LastField)
+            {
+                break;
             }
         }
-        finally
+
+        if (readValidCoulmns < 5)
         {
-            if (buffer is not null)
-                ArrayPool<int>.Shared.Return(buffer);
+            AotCsvException.ThrowBaseException();
+            columnMap = default;
+            return;
         }
 
+        columnMap = ImmutableArray.Create(CollectionsMarshal.AsSpan(rawColumnMap));
     }
 
-    static bool ICsvSerializable<SampleModel>.TryParse(CsvParser parser, [NotNullWhen(true)] out SampleModel? value)
+    static bool ICsvSerializable<SampleModel>.ParseRecord(CsvParser parser, [NotNullWhen(true)] out SampleModel? value)
     {
         int @Id = default;
         string @FirstName = "";
@@ -52,13 +74,13 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
         int targetIndex;
 
-        for (int columnIndex = 0; columnIndex < parser.ColumnCount; columnIndex++)
+        for (int columnIndex = 0; columnIndex < parser.ColumnMap.Length; columnIndex++)
         {
             targetIndex = parser.ColumnMap[columnIndex];
             using var t = parser.TryGetField(out var state);
             var field = t.AsSpan();
 
-            if(state == FieldState.NoLine)
+            if (state == FieldState.NoLine)
             {
                 value = null;
                 return false;
@@ -68,23 +90,28 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
             {
                 case 1:
                     if (!int.TryParse(field, parser.Config.CultureInfo, out @Id))
-                        goto throwLabel;
+                    {
+                        CsvTypeException.Throw(typeof(int), field.ToString(), @"Id");
+                        value = null;
+                        return false;
+                    }
                     break;
                 case 2:
                     @FirstName = field.ToString();
                     break;
                 case 3:
-                    if (field.IsEmpty)
-                        @MiddleName = null;
-                    else
-                        @MiddleName = field.ToString();
+                    @MiddleName = field.ToString();
                     break;
                 case 4:
                     @LastName = field.ToString();
                     break;
                 case 5:
                     if (!DateTime.TryParseExact(field, "yyyy年MM月dd日", parser.Config.CultureInfo, DateTimeStyles.None, out @BirthDay))
-                        goto throwLabel;
+                    {
+                        CsvTypeException.Throw(typeof(DateTime), field.ToString(), @"BirthDay");
+                        value = null;
+                        return false;
+                    }
                     break;
             }
         }
@@ -98,11 +125,6 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
             BirthDay = @BirthDay!,
         };
         return true;
-
-throwLabel:
-        AotCsv.AotCsvException.Throw();
-        value = null;
-        return false;
     }
 
     static void ICsvSerializable<SampleModel>.WriteHeader(TextWriter writer, CsvSerializeConfig context)

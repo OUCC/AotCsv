@@ -8,8 +8,8 @@ namespace Oucc.AotCsv;
 public class AotCsvException : Exception
 {
     public AotCsvException() { }
-    public AotCsvException(string message) : base(message) { }
-    public AotCsvException(string message, Exception inner) : base(message, inner) { }
+    public AotCsvException(string? message) : base(message) { }
+    public AotCsvException(string? message, Exception? inner) : base(message, inner) { }
     protected AotCsvException(
       System.Runtime.Serialization.SerializationInfo info,
       System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
@@ -21,5 +21,5 @@ public class AotCsvException : Exception
     }
 
     [DoesNotReturn]
-    public static void Throw() => throw new AotCsvException();
+    public static void ThrowBaseException(string? message = null, Exception? innerException = null) => throw new AotCsvException(message, innerException);
 }
