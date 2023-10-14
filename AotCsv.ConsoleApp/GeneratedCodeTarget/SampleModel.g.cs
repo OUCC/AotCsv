@@ -41,38 +41,49 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
     }
 
-    static bool ICsvSerializable<SampleModel>.TryParse(CsvParser parser, [NotNullWhen(true)] out @SampleModel? value)
+    static bool ICsvSerializable<SampleModel>.TryParse(CsvParser parser, [NotNullWhen(true)] out SampleModel? value)
     {
         int @Id = default;
-        string? @FirstName = default;
+        string @FirstName = "";
         string? @MiddleName = default;
-        string? @LastName = default;
-        DateTime BirthDay = default;
+        string @LastName = "";
+        DateTime @BirthDay = default;
 
-        int columnIndex = 0;
-        int targetIndex = parser.ColumnMap[columnIndex];
 
-        for (; columnIndex < parser.ColumnCount; targetIndex = parser.ColumnMap[++columnIndex])
+        int targetIndex;
+
+        for (int columnIndex = 0; columnIndex < parser.ColumnCount; columnIndex++)
         {
-            var field = parser.TryGetField(out var state).AsSpan();
+            targetIndex = parser.ColumnMap[columnIndex];
+            using var t = parser.TryGetField(out var state);
+            var field = t.AsSpan();
+
+            if(state == FieldState.NoLine)
+            {
+                value = null;
+                return false;
+            }
 
             switch (targetIndex)
             {
                 case 1:
-                    if (!int.TryParse(field, parser.Config.CultureInfo, out Id))
+                    if (!int.TryParse(field, parser.Config.CultureInfo, out @Id))
                         goto throwLabel;
                     break;
                 case 2:
-                    FirstName = field.ToString();
+                    @FirstName = field.ToString();
                     break;
                 case 3:
-                    LastName = field.ToString();
+                    if (field.IsEmpty)
+                        @MiddleName = null;
+                    else
+                        @MiddleName = field.ToString();
                     break;
                 case 4:
-                    LastName = field.ToString();
+                    @LastName = field.ToString();
                     break;
                 case 5:
-                    if (!DateTime.TryParseExact(field, "yyyy年MM月dd日", parser.Config.CultureInfo, DateTimeStyles.None, out BirthDay))
+                    if (!DateTime.TryParseExact(field, "yyyy年MM月dd日", parser.Config.CultureInfo, DateTimeStyles.None, out @BirthDay))
                         goto throwLabel;
                     break;
             }
@@ -80,11 +91,11 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
         value = new @SampleModel()
         {
-            @Id = @Id!,
-            @FirstName = @FirstName!,
-            @MiddleName = @MiddleName!,
-            @LastName = @LastName!,
-            @BirthDay = BirthDay!,
+            Id = @Id!,
+            FirstName = @FirstName!,
+            MiddleName = @MiddleName!,
+            LastName = @LastName!,
+            BirthDay = @BirthDay!,
         };
         return true;
 

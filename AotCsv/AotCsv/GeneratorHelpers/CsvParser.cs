@@ -75,6 +75,7 @@ public class CsvParser
                                 EnsureBuffer(ref buffer, destSpan[..length], 1);
                                 destSpan = buffer.AsSpan();
                                 destSpan[length++] = '"';
+                                state = ReadingState.ValueInQuote;
                                 continue;
                             case ReadingState.AfterCR:
                                 _bufferOffset += i;
@@ -104,6 +105,7 @@ public class CsvParser
                                 destSpan[length++] = ',';
                                 continue;
                             case ReadingState.ValueNotInQuote:
+                                _bufferOffset += i + 1;
                                 fieldState = FieldState.HasField;
                                 return new ArrayContainer(buffer, length);
                             case ReadingState.AfterCR:
@@ -269,7 +271,7 @@ public class CsvParser
     private void EnsureBuffer(ref char[] buffer, Span<char> contentBuffer, int additionalLength)
     {
         var requiredLength = contentBuffer.Length + additionalLength;
-        if (buffer.Length < requiredLength) return;
+        if (buffer.Length > requiredLength) return;
 
         var temp = ArrayPool<char>.Shared.Rent(requiredLength);
         contentBuffer.CopyTo(temp);
