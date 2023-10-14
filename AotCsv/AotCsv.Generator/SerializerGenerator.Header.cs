@@ -88,9 +88,8 @@ public partial class SerializerGenerator
 
     private static bool IsTargetType(ITypeSymbol type, ReferenceSymbols reference)
     {
-        return type.AllInterfaces.Contains(reference.ISpanFormattable)
-            || type.Equals(reference.String, SymbolEqualityComparer.Default)
-            || type.NullableAnnotation == NullableAnnotation.Annotated && type.TypeKind == TypeKind.Struct
-                && (type as INamedTypeSymbol)!.TypeArguments[0].AllInterfaces.Contains(reference.ISpanFormattable);
+        return type.NullableAnnotation == NullableAnnotation.Annotated && !type.Equals(reference.String, SymbolEqualityComparer.Default)
+            ? (type as INamedTypeSymbol)!.TypeArguments[0].AllInterfaces.Contains(reference.ISpanFormattable)
+            : type.AllInterfaces.Contains(reference.ISpanFormattable) || type.Equals(reference.String, SymbolEqualityComparer.Default);
     }
 }

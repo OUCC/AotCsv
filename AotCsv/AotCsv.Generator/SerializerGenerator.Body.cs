@@ -9,10 +9,12 @@ public partial class SerializerGenerator
 {
     private static void CreateBodyCode(StringBuilder builder, INamedTypeSymbol targetSymbol, ISymbol[] targetMemberSymbols, ReferenceSymbols reference)
     {
+#if DEBUG
         if (targetMemberSymbols.Length == 0)
         {
             targetMemberSymbols = targetSymbol.GetMembers().Where(x => !x.IsImplicitlyDeclared && x is IPropertySymbol or IFieldSymbol).ToArray();
         }
+#endif
 
         builder.Append("""
 
@@ -46,16 +48,20 @@ public partial class SerializerGenerator
                 var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
                 if (typeParameter.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, symbol, reference, true, typeParameter.Name);
+                    DateTimeSerializeCodegen(builder, symbol, reference, true, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
                 }
                 else if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
-                    NullableIStructSpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.Name);
+                    NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
                 }
             }
             else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated && typeSymbol.TypeKind == TypeKind.Class)
             {
-                NullableIClassSpanFormattableSerializeCodegen(builder, symbol.Name);
+                var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
+                if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
+                {
+                    NullableClassISpanFormattableSerializeCodegen(builder, symbol.Name);
+                }
             }
             else
             {
@@ -98,7 +104,7 @@ public partial class SerializerGenerator
         {
             if (nullable)
             {
-                NullableIStructSpanFormattableSerializeCodegen(builder, propertySymbol.Name, type);
+                NullableStructISpanFormattableSerializeCodegen(builder, propertySymbol.Name, type);
             }
             else ISpanFormattableSerializeCodegen(builder, propertySymbol.Name);
         }
@@ -194,7 +200,7 @@ public partial class SerializerGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void NullableIClassSpanFormattableSerializeCodegen(StringBuilder builder, string name)
+    private static void NullableClassISpanFormattableSerializeCodegen(StringBuilder builder, string name)
     {
         builder.AppendFormatted($$"""
 
@@ -224,7 +230,7 @@ public partial class SerializerGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void NullableIStructSpanFormattableSerializeCodegen(StringBuilder builder, string name, string type)
+    private static void NullableStructISpanFormattableSerializeCodegen(StringBuilder builder, string name, string type)
     {
         builder.AppendFormatted($$"""
 
@@ -246,16 +252,6 @@ public partial class SerializerGenerator
                                 global::System.Buffers.ArrayPool<char>.Shared.Return(tmp);
                             }
                         }
-
-            """);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void StringSerializeCodegen(StringBuilder builder, string name)
-    {
-        builder.AppendFormatted($"""
-
-                        global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, value.{name}.AsSpan(), config, value.{name}.Length);
 
             """);
     }

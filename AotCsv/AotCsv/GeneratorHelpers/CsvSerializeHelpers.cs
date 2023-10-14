@@ -30,7 +30,7 @@ public class CsvSerializeHelpers
         else if (config.QuoteOption != QuoteOption.MustNoQuote)
         {
             int writtenIndex = 0;
-            int index = 0;
+            int index;
             writer.Write('"');
             while (true)
             {
