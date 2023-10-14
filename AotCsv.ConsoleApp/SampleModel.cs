@@ -1,8 +1,8 @@
 ﻿using Oucc.AotCsv.Attributes;
 
-namespace Oucc.AotCsv.ConsoleApp.GeneratedCodeTarget;
+namespace Oucc.AotCsv.ConsoleApp;
 
-//[CsvSerializable]
+[CsvSerializable]
 internal partial class SampleModel
 {
     [CsvName("ID")]

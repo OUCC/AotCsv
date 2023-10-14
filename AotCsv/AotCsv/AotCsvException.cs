@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Oucc.AotCsv;
 
@@ -18,4 +19,7 @@ public class AotCsvException : Exception
     {
         throw new AotCsvException("QuoteOption have to be MustQuote or ShouldQuote");
     }
+
+    [DoesNotReturn]
+    public static void Throw() => throw new AotCsvException();
 }

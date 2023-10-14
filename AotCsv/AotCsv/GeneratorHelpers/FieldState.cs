@@ -4,5 +4,6 @@ public enum FieldState: byte
 {
     NoLine,
     NoField,
+    LastField,
     HasField
 }

@@ -21,10 +21,10 @@ public class CsvReader
 
     public IEnumerable<T> GetRecords<T>() where T : ICsvSerializable<T>
     {
-        //while (T.TryParse(_parser, out var result))
-        //{
-        //    yield return result;
-        //}
+        while (T.TryParse(_parser, out var result))
+        {
+            yield return result;
+        }
         yield break;
     }
 }
