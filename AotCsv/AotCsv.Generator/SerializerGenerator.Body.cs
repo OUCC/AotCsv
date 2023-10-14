@@ -39,35 +39,44 @@ public partial class SerializerGenerator
             }
             else continue;
 
+            // string(?)の時
             if (typeSymbol.Equals(reference.String, SymbolEqualityComparer.Default))
             {
                 NullableStringSerializeCodegen(builder, symbol.Name);
             }
-            else if (typeSymbol.NullableAnnotation == NullableAnnotation.Annotated && typeSymbol.TypeKind == TypeKind.Struct)
+            // struct?のとき
+            else if (typeSymbol.NullableAnnotation == NullableAnnotation.Annotated && typeSymbol.IsValueType)
             {
                 var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
                 if (typeParameter.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, symbol, reference, true, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
+                    DateTimeSerializeCodegen(builder, symbol, reference, true);
+                }
+                else if (typeParameter.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
+                {
+                    NullableBooleanSerializeCodegen(builder, symbol.Name);
                 }
                 else if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
-                    NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name, typeParameter.ToDisplayString(NullableFlowState.NotNull, SymbolDisplayFormat.FullyQualifiedFormat));
+                    NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name);
                 }
             }
-            else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated && typeSymbol.TypeKind == TypeKind.Class)
+            // class?のとき
+            else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated
+                     && typeSymbol.IsReferenceType
+                     && typeSymbol.AllInterfaces.Contains(reference.ISpanFormattable))
             {
-                var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
-                if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
-                {
-                    NullableClassISpanFormattableSerializeCodegen(builder, symbol.Name);
-                }
+                NullableClassISpanFormattableSerializeCodegen(builder, symbol.Name);
             }
             else
             {
                 if (typeSymbol.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, symbol, reference, false, "");
+                    DateTimeSerializeCodegen(builder, symbol, reference, false);
+                }
+                else if (typeSymbol.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
+                {
+                    BooleanSerializeCodegen(builder, symbol.Name);
                 }
                 else if (typeSymbol.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
@@ -97,14 +106,47 @@ public partial class SerializerGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void DateTimeSerializeCodegen(StringBuilder builder, ISymbol propertySymbol, ReferenceSymbols reference, bool nullable, string type)
+    private static void NullableBooleanSerializeCodegen(StringBuilder builder, string name)
+    {
+        builder.AppendFormatted($$"""
+        
+                        if (value.{{name}} is not null)
+                        {
+                            if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten))
+                            {
+                                global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
+                            }
+                        }
+                        else
+                        {
+                            global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, default, config, 0);
+                        }
+
+            """);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void BooleanSerializeCodegen(StringBuilder builder, string name)
+    {
+        builder.AppendFormatted($$"""
+
+                        if (value.{{name}}.TryFormat(bufferSpan, out charsWritten))
+                        {
+                            global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
+                        }
+
+            """);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void DateTimeSerializeCodegen(StringBuilder builder, ISymbol propertySymbol, ReferenceSymbols reference, bool nullable)
     {
         var attributes = propertySymbol.GetAttributes();
         if (attributes.IsEmpty)
         {
             if (nullable)
             {
-                NullableStructISpanFormattableSerializeCodegen(builder, propertySymbol.Name, type);
+                NullableStructISpanFormattableSerializeCodegen(builder, propertySymbol.Name);
             }
             else ISpanFormattableSerializeCodegen(builder, propertySymbol.Name);
         }
@@ -116,7 +158,7 @@ public partial class SerializerGenerator
                 string format = (string?)formatAttribute.ConstructorArguments[0].Value ?? "";
                 if (nullable)
                 {
-                    NullableDateTimeSerializeCodegenWithFormat(builder, propertySymbol.Name, format, type);
+                    NullableDateTimeSerializeCodegenWithFormat(builder, propertySymbol.Name, format);
                 }
                 else
                 {
@@ -150,27 +192,30 @@ public partial class SerializerGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void NullableDateTimeSerializeCodegenWithFormat(StringBuilder builder, string name, string format, string type)
+    private static void NullableDateTimeSerializeCodegenWithFormat(StringBuilder builder, string name, string format)
     {
         builder.AppendFormatted($$"""
 
                         if (value.{{name}} is not null)
                         {
-                            {{type}} nullableValue = value.{{name}}.Value;
-                            if (nullableValue.TryFormat(bufferSpan, out charsWritten, "{{format}}", config.CultureInfo))
+                            if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten, "{{format}}", config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                             }
                             else
                             {
                                 char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                                while (!nullableValue.TryFormat(tmp, out charsWritten, "{{format}}", config.CultureInfo))
+                                while (!value.{{name}}.Value.TryFormat(tmp, out charsWritten, "{{format}}", config.CultureInfo))
                                 {
                                     global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                                 }
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
                                 global::System.Buffers.ArrayPool<char>.Shared.Return(tmp);
                             }
+                        }
+                        else
+                        {
+                            global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, default, config, 0);
                         }
 
             """);
@@ -230,27 +275,30 @@ public partial class SerializerGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void NullableStructISpanFormattableSerializeCodegen(StringBuilder builder, string name, string type)
+    private static void NullableStructISpanFormattableSerializeCodegen(StringBuilder builder, string name)
     {
         builder.AppendFormatted($$"""
 
                         if (value.{{name}} is not null)
                         {
-                            {{type}} nullableValue = value.{{name}}.Value;
-                            if (nullableValue.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                            if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                             }
                             else
                             {
                                 char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                                while (!nullableValue.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
+                                while (!value.{{name}}.Value.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
                                 {
                                     global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                                 }
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, tmp.AsSpan(), config, charsWritten);
                                 global::System.Buffers.ArrayPool<char>.Shared.Return(tmp);
                             }
+                        }
+                        else
+                        {
+                            global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, default, config, 0);
                         }
 
             """);

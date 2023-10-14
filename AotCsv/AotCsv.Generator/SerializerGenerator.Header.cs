@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Microsoft.CodeAnalysis;
+using Oucc.AotCsv.Generator.Comparer;
 using Oucc.AotCsv.Generator.Utility;
 
 namespace Oucc.AotCsv.Generator;
@@ -11,6 +12,8 @@ public partial class SerializerGenerator
         var targetMembers = targetSymbol.GetMembers()
             .Where(m => m is IPropertySymbol p && IsTargetProperty(p, reference)
                 || m is IFieldSymbol f && IsTargetField(f, reference))
+            .OrderBy(m => m.GetAttributes().Select(ad => ad.AttributeClass!.Name).Where(x => x == reference.CsvIndexAttribute.Name || x == reference.CsvNameAttribute.Name).ToList(), AttributeComparer.Instance)
+            .ThenBy(m => m.GetAttributes().Where(ad => ad.AttributeClass!.Equals(reference.CsvIndexAttribute, SymbolEqualityComparer.Default)).Select(ad => (uint)ad.ConstructorArguments[0].Value!).FirstOrDefault())
             .ToArray();
 
         var header = targetMembers.Select(m =>
@@ -88,8 +91,17 @@ public partial class SerializerGenerator
 
     private static bool IsTargetType(ITypeSymbol type, ReferenceSymbols reference)
     {
-        return type.NullableAnnotation == NullableAnnotation.Annotated && !type.Equals(reference.String, SymbolEqualityComparer.Default)
-            ? (type as INamedTypeSymbol)!.TypeArguments[0].AllInterfaces.Contains(reference.ISpanFormattable)
-            : type.AllInterfaces.Contains(reference.ISpanFormattable) || type.Equals(reference.String, SymbolEqualityComparer.Default);
+        if (type.NullableAnnotation == NullableAnnotation.Annotated && type.IsValueType)
+        {
+            var typeArgument = (type as INamedTypeSymbol)!.TypeArguments[0];
+            return typeArgument.AllInterfaces.Contains(reference.ISpanFormattable)
+                || typeArgument.Equals(reference.Boolean, SymbolEqualityComparer.Default);// boolのAnnotatedはここで拾う
+        }
+        else
+        {
+            return type.AllInterfaces.Contains(reference.ISpanFormattable)
+                || type.Equals(reference.String, SymbolEqualityComparer.Default)
+                || type.Equals(reference.Boolean, SymbolEqualityComparer.Default);// boolのNotAnnotatedはここで拾える
+        }
     }
 }

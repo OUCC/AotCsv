@@ -2,6 +2,7 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Oucc.AotCsv.Generator.Comparer;
 using Oucc.AotCsv.Generator.Utility;
 
 namespace Oucc.AotCsv.Generator;
@@ -16,7 +17,7 @@ public partial class SerializerGenerator : IIncrementalGenerator
             static (_, _) => true,
             static (context, _) => context);
 
-        var source = attributeContext.Combine(context.CompilationProvider).WithComparer(Comparer.Instance);
+        var source = attributeContext.Combine(context.CompilationProvider).WithComparer(GeneratorComparer.Instance);
 
         context.RegisterSourceOutput(source, static (context, source) =>
         {
@@ -68,20 +69,5 @@ public partial class SerializerGenerator : IIncrementalGenerator
             """);
 
         context.AddSource(targetSymbol.Name + ".g.cs", builder.ToString());
-    }
-
-    class Comparer : IEqualityComparer<(GeneratorAttributeSyntaxContext, Compilation)>
-    {
-        public static readonly Comparer Instance = new();
-
-        public bool Equals((GeneratorAttributeSyntaxContext, Compilation) x, (GeneratorAttributeSyntaxContext, Compilation) y)
-        {
-            return x.Item1.Equals(y.Item1);
-        }
-
-        public int GetHashCode((GeneratorAttributeSyntaxContext, Compilation) obj)
-        {
-            return obj.Item1.GetHashCode();
-        }
     }
 }
