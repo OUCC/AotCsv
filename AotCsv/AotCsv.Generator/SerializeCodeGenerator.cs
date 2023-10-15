@@ -5,17 +5,53 @@ using Oucc.AotCsv.Generator.Utility;
 
 namespace Oucc.AotCsv.Generator;
 
-public partial class SerializerGenerator
+internal static class SerializeCodeGenerator
 {
-    private static void CreateBodyCode(StringBuilder builder, INamedTypeSymbol targetSymbol, ISymbol[] targetMemberSymbols, ReferenceSymbols reference)
+    #region Header
+    public static void CreateHeaderCode(MemberMeta[] targetMembers, StringBuilder builder)
     {
-#if DEBUG
-        if (targetMemberSymbols.Length == 0)
-        {
-            targetMemberSymbols = targetSymbol.GetMembers().Where(x => !x.IsImplicitlyDeclared && x is IPropertySymbol or IFieldSymbol).ToArray();
-        }
-#endif
+        builder.AppendFormatted($$"""
+                    if (context.QuoteOption == {{Constants.QuoteOption}}.MustQuote)
+                    {
+                        writer.WriteLine("
+            """);
 
+        for (var i = 0; i < targetMembers.Length; i++)
+        {
+            builder.AppendFormatted($@"\""{targetMembers[i].HeaderName}\""");
+            if (i < targetMembers.Length - 1)
+                builder.Append(',');
+        }
+
+        builder.AppendFormatted($$"""
+            ");
+                    }
+                    else
+                    {
+                        writer.WriteLine("
+            """);
+
+
+        for (var i = 0; i < targetMembers.Length; i++)
+        {
+            if (targetMembers[i].HeaderName.AsSpan().IndexOfAny('"', ',') >= 0) builder.AppendFormatted($@"\""{targetMembers[i].HeaderName}\""");
+            else builder.Append(targetMembers[i].HeaderName);
+
+            if (i < targetMembers.Length - 1)
+                builder.Append(',');
+        }
+
+        builder.AppendFormatted($$"""
+            ");
+                    }
+
+            """);
+    }
+    #endregion 
+
+    #region Body
+    public static void CreateBodyCode(StringBuilder builder,  MemberMeta[] targetMembers, ReferenceSymbols reference)
+    {
         builder.Append("""
 
                     char[] buffer = global::System.Buffers.ArrayPool<char>.Shared.Rent(1024);
@@ -25,19 +61,10 @@ public partial class SerializerGenerator
                     {
             """);
 
-        for (var i = 0; i < targetMemberSymbols.Length; i++)
+        for (var i = 0; i < targetMembers.Length; i++)
         {
-            var symbol = targetMemberSymbols[i];
-            ITypeSymbol typeSymbol;
-            if (symbol is IPropertySymbol propertySymbol)
-            {
-                typeSymbol = propertySymbol.Type;
-            }
-            else if (symbol is IFieldSymbol fieldSymbol)
-            {
-                typeSymbol = fieldSymbol.Type;
-            }
-            else continue;
+            var symbol = targetMembers[i].Symbol;
+            var typeSymbol = targetMembers[i].Type;
 
             // string(?)の時
             if (typeSymbol.Equals(reference.String, SymbolEqualityComparer.Default))
@@ -84,7 +111,7 @@ public partial class SerializerGenerator
                 }
             }
 
-            if (i < targetMemberSymbols.Length - 1)
+            if (i < targetMembers.Length - 1)
             {
                 builder.Append("""
                             writer.Write(',');
@@ -105,11 +132,12 @@ public partial class SerializerGenerator
             """);
     }
 
+    #region Each Types Generator
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void NullableBooleanSerializeCodegen(StringBuilder builder, string name)
     {
         builder.AppendFormatted($$"""
-        
+    
                         if (value.{{name}} is not null)
                         {
                             if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten))
@@ -320,4 +348,6 @@ public partial class SerializerGenerator
 
             """);
     }
+    #endregion
+    #endregion
 }

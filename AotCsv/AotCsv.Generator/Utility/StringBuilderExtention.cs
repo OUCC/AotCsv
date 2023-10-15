@@ -6,7 +6,7 @@ namespace Oucc.AotCsv.Generator.Utility
 {
     internal static class StringBuilderExtention
     {
-        public static StringBuilder AppendFormatted(this StringBuilder builder, [InterpolatedStringHandlerArgument("builder")] in AppendInterpolatedStringHandler handler)
+        public static StringBuilder AppendFormatted(this StringBuilder builder, [InterpolatedStringHandlerArgument("builder")] in AppendInterpolatedStringHandler _)
         {
             return builder;
         }
