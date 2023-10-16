@@ -96,7 +96,7 @@ internal static class DeserializeCodeGenerator
 
         builder.AppendFormatted($$"""
             
-                static bool global::Oucc.AotCsv.ICsvSerializable<@{{targetType.Name}}>.ParseRecord(global::Oucc.AotCsv.GeneratorHelpers.CsvParser parser, [global::System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out @{{targetType.Name}} value)
+                static bool global::Oucc.AotCsv.ICsvSerializable<{{targetType.Name}}>.ParseRecord(global::Oucc.AotCsv.GeneratorHelpers.CsvParser parser, [global::System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out {{targetType.Name}}? value)
                 {
 
             """);
@@ -135,7 +135,7 @@ internal static class DeserializeCodeGenerator
             else if (targetMembers[i].Type.Equals(referenceSymbols.DateTime, SymbolEqualityComparer.Default))
             {
                 var formatAttribute = targetMembers[i].Symbol.GetAttributes().Where(x => x.AttributeClass!.Equals(referenceSymbols.CsvDateTimeFormatAttribute, SymbolEqualityComparer.Default)).First();
-                var format = string.Concat("\"", (formatAttribute.ConstructorArguments[0].Value as string)?.Replace("\"", "\"\""), "\"") ?? "defaut";
+                var format = string.Concat("\"", (formatAttribute.ConstructorArguments[0].Value as string)?.Replace("\"", "\"\""), "\"") ?? "default";
                 var dateTimeStyles = formatAttribute.ConstructorArguments[1].Value is DateTimeStyles styles ? styles : DateTimeStyles.None;
                 WriteDateTimeParseExact(builder, i + 1, targetMembers[i].Symbol.Name, format, dateTimeStyles);
             }
@@ -149,14 +149,15 @@ internal static class DeserializeCodeGenerator
                         }
                     }
 
-                    value = new @{{targetType.Name}}()
+                    value = new {{targetType.Name}}()
                     {
+
             """);
 
         foreach (var member in targetMembers)
         {
             builder.AppendFormatted($$"""
-                            @{{member.Symbol.Name}} = @{{member.Symbol.Name}}!,
+                            {{member.Symbol.Name}} = @{{member.Symbol.Name}}!,
 
                 """);
         }
