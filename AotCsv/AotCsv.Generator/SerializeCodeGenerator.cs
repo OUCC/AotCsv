@@ -50,7 +50,7 @@ internal static class SerializeCodeGenerator
     #endregion 
 
     #region Body
-    public static void CreateBodyCode(StringBuilder builder,  MemberMeta[] targetMembers, ReferenceSymbols reference)
+    public static void CreateBodyCode(StringBuilder builder, MemberMeta[] targetMembers, ReferenceSymbols reference)
     {
         builder.Append("""
 
@@ -83,6 +83,10 @@ internal static class SerializeCodeGenerator
                 {
                     NullableBooleanSerializeCodegen(builder, symbol.Name);
                 }
+                else if (typeParameter.Equals(reference.Char, SymbolEqualityComparer.IncludeNullability))
+                {
+                    NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name, true);
+                }
                 else if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
                     NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name);
@@ -104,6 +108,10 @@ internal static class SerializeCodeGenerator
                 else if (typeSymbol.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
                 {
                     BooleanSerializeCodegen(builder, symbol.Name);
+                }
+                else if (typeSymbol.Equals(reference.Char, SymbolEqualityComparer.IncludeNullability))
+                {
+                    ISpanFormattableSerializeCodegen (builder, symbol.Name, true);
                 }
                 else if (typeSymbol.AllInterfaces.Contains(reference.ISpanFormattable))
                 {
@@ -250,18 +258,18 @@ internal static class SerializeCodeGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ISpanFormattableSerializeCodegen(StringBuilder builder, string name)
+    private static void ISpanFormattableSerializeCodegen(StringBuilder builder, string name, bool isChar = false)
     {
         builder.AppendFormatted($$"""
 
-                        if (value.{{name}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                        if ({{(isChar ? $"((ISpanFormattable)value.{name})" : $"value.{name}")}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
                         {
                             global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                         }
                         else
                         {
                             char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                            while (!value.{{name}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
+                            while (!{{(isChar ? $"((ISpanFormattable)value.{name})" : $"value.{name}")}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                             }
@@ -303,20 +311,20 @@ internal static class SerializeCodeGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void NullableStructISpanFormattableSerializeCodegen(StringBuilder builder, string name)
+    private static void NullableStructISpanFormattableSerializeCodegen(StringBuilder builder, string name, bool isChar = false)
     {
         builder.AppendFormatted($$"""
 
                         if (value.{{name}} is not null)
                         {
-                            if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                            if ({{(isChar ? $"((ISpanFormattable)value.{name}.Value)": $"value.{name}.Value")}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                             }
                             else
                             {
                                 char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                                while (!value.{{name}}.Value.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
+                                while (!{{(isChar ? $"((ISpanFormattable)value.{name}.Value)" : $"value.{name}.Value")}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
                                 {
                                     global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                                 }
