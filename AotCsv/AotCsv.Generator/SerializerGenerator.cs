@@ -29,6 +29,7 @@ public class SerializerGenerator : IIncrementalGenerator
     private static void Emit(SourceProductionContext context, GeneratorAttributeSyntaxContext source, Compilation compilation)
     {
         var targetSymbol = (INamedTypeSymbol)source.TargetSymbol;
+        var targetTypeName = targetSymbol.Name;
 
         var builder = new StringBuilder();
         var reference = new ReferenceSymbols(compilation);
@@ -44,9 +45,9 @@ public class SerializerGenerator : IIncrementalGenerator
 
         builder.AppendFormatted($$"""
 
-            partial {{(targetSymbol.IsRecord ? "record " : "")}}{{(targetSymbol.TypeKind == TypeKind.Class ? "class" : "struct")}} {{targetSymbol.Name}} : global::Oucc.AotCsv.ICsvSerializable<{{targetSymbol.Name}}>
+            partial {{(targetSymbol.IsRecord ? "record " : "")}}{{(targetSymbol.TypeKind == TypeKind.Class ? "class" : "struct")}} {{targetTypeName}} : global::Oucc.AotCsv.ICsvSerializable<{{targetTypeName}}>
             {
-                static void global::Oucc.AotCsv.ICsvSerializable<{{targetSymbol.Name}}>.WriteHeader(global::System.IO.TextWriter writer, global::Oucc.AotCsv.CsvSerializeConfig context)
+                static void global::Oucc.AotCsv.ICsvSerializable<{{targetTypeName}}>.WriteHeader(global::System.IO.TextWriter writer, global::Oucc.AotCsv.CsvSerializeConfig context)
                 {
 
             """);
@@ -56,7 +57,7 @@ public class SerializerGenerator : IIncrementalGenerator
         builder.AppendFormatted($$"""
                 }
 
-                static void global::Oucc.AotCsv.ICsvSerializable<{{targetSymbol.Name}}>.WriteRecord(global::System.IO.TextWriter writer, global::Oucc.AotCsv.CsvSerializeConfig config, {{targetSymbol.Name}} value)
+                static void global::Oucc.AotCsv.ICsvSerializable<{{targetTypeName}}>.WriteRecord(global::System.IO.TextWriter writer, global::Oucc.AotCsv.CsvSerializeConfig config, {{targetTypeName}} value)
                 {
             """);
 
@@ -64,17 +65,23 @@ public class SerializerGenerator : IIncrementalGenerator
 
         builder.Append("""
                 }
-            }
 
-            """);
+           """);
 
-        context.AddSource(targetSymbol.Name + ".g.cs", builder.ToString());
+        DeserializeCodeGenerator.WriteHeaderCode(builder,targets, targetTypeName);
+
+        DeserializeCodeGenerator.WriteBodyCode(builder, targets, targetSymbol, reference);
+
+        builder.Append("}\n");
+        var result = builder.ToString();
+
+        context.AddSource(targetTypeName + ".g.cs", builder.ToString());
     }
 
 
     private static MemberMeta[] GetTargetMembers(INamedTypeSymbol targetSymbol, ReferenceSymbols reference)
     {
-        return targetSymbol.GetMembers()
+        var result = targetSymbol.GetMembers()
             .Select(MemberMeta (m) =>
             {
                 // Whereで nullreference type を絞れないため!をつける
@@ -85,15 +92,9 @@ public class SerializerGenerator : IIncrementalGenerator
                 return null!;
             })
             .Where(m => m is not null)
-            .OrderBy(m => m.Symbol.GetAttributes()
-                .Select(ad => ad.AttributeClass!.Name)
-                .Where(x => x == reference.CsvIndexAttribute.Name || x == reference.CsvNameAttribute.Name)
-                .ToList(), AttributeComparer.Instance)
-            .ThenBy(m => m.Symbol.GetAttributes()
-                .Where(ad => ad.AttributeClass!.Equals(reference.CsvIndexAttribute, SymbolEqualityComparer.Default))
-                .Select(ad => (uint)ad.ConstructorArguments[0].Value!)
-                .FirstOrDefault()
-            ).ToArray();
+            .OrderBy(m => m.Index ?? uint.MaxValue)
+            .ToArray();
+        return result;
     }
 
     private static bool IsTargetProperty(IPropertySymbol property, ReferenceSymbols reference)

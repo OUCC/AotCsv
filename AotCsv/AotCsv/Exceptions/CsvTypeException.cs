@@ -2,7 +2,7 @@
 
 namespace Oucc.AotCsv.Exceptions;
 
-public class CsvTypeException : AotCsvException
+public class CsvTypeException : CsvBadDataException
 {
     public Type TargetType { get; }
 

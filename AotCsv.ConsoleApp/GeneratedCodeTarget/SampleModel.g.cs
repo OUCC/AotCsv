@@ -55,7 +55,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
         if (readValidCoulmns < 5)
         {
-            AotCsvException.ThrowBaseException();
+            CsvInvalidHeaderException.Throw(rawColumnMap);
             columnMap = default;
             return;
         }
