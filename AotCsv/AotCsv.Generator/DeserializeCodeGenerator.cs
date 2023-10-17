@@ -37,7 +37,7 @@ internal static class DeserializeCodeGenerator
                     global::System.Collections.Generic.List<int> rawColumnMap = new global::System.Collections.Generic.List<int>({{targetMembers.Length}});
                     int readValidColumns = 0;
 
-                    while (readValidColumns < {{targetMembers.Length}})
+                    while (true)
                     {
                         using global::Oucc.AotCsv.GeneratorHelpers.ArrayContainer field = parser.TryGetField(out global::Oucc.AotCsv.GeneratorHelpers.FieldState state);
                         if (state == global::Oucc.AotCsv.GeneratorHelpers.FieldState.NoLine)
@@ -110,7 +110,7 @@ internal static class DeserializeCodeGenerator
 
         builder.AppendFormatted($$"""
                             
-                    for (int columnIndex = 0; columnIndex < parser.ColumnMap.Length; columnIndex++)
+                    for (int columnIndex = 0; true; columnIndex++)
                     {
                         int targetIndex = parser.ColumnMap[columnIndex];
                         using global::Oucc.AotCsv.GeneratorHelpers.ArrayContainer container = parser.TryGetField(out global::Oucc.AotCsv.GeneratorHelpers.FieldState state);
@@ -140,6 +140,13 @@ internal static class DeserializeCodeGenerator
         }
 
         builder.AppendFormatted($$"""
+                        }
+
+                        if (state == global::Oucc.AotCsv.GeneratorHelpers.FieldState.LastField)
+                        {
+                            if (columnIndex < parser.ColumnMap.Length - 1)
+                                global::Oucc.AotCsv.Exceptions.TooFewColumnsException.Throw({{targetType.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata, columnIndex + 1, parser.ColumnMap.Length);
+                            break;
                         }
                     }
 

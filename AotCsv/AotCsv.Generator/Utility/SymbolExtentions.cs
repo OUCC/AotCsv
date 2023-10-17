@@ -16,7 +16,6 @@ internal static class SymbolExtentions
             symbol = symbol.ContainingType as INamespaceOrTypeSymbol ?? symbol.ContainingNamespace;
         }
 
-        // TODO: ToString以外を使う
-        return symbol?.ToString() == "<global namespace>";
+        return symbol is INamespaceSymbol namespaceSymbol && namespaceSymbol.IsGlobalNamespace;
     }
 }

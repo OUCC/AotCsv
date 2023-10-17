@@ -24,7 +24,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
         var rawColumnMap = new List<int>(5);
         var readValidCoulmns = 0;
 
-        while (readValidCoulmns < 5)
+        while (true)
         {
             using var field = parser.TryGetField(out var state);
             if (state == FieldState.NoLine)
@@ -65,18 +65,18 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
     static bool ICsvSerializable<SampleModel>.ParseRecord(CsvParser parser, [NotNullWhen(true)] out SampleModel? value)
     {
-        int @Id = default;
-        string @FirstName = "";
-        string? @MiddleName = default;
-        string @LastName = "";
-        DateTime @BirthDay = default;
+        int @Id = default!;
+        string @FirstName = default!;
+        string @MiddleName = default!;
+        string @LastName = default!;
+        DateTime @BirthDay = default!;
 
 
         int targetIndex;
 
-        for (int columnIndex = 0; columnIndex < parser.ColumnMap.Length; columnIndex++)
+        for (int columnIndex = 0; true; columnIndex++)
         {
-            targetIndex = parser.ColumnMap[columnIndex];
+            targetIndex = columnIndex < parser.ColumnMap.Length ? parser.ColumnMap[columnIndex] : 0;
             using var t = parser.TryGetField(out var state);
             var field = t.AsSpan();
 
@@ -113,6 +113,13 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
                         return false;
                     }
                     break;
+            }
+
+            if (state == FieldState.LastField)
+            {
+                if (columnIndex < parser.ColumnMap.Length - 1)
+                    TooFewColumnsException.Throw(Helper.MappingMetadata, columnIndex + 1, parser.ColumnMap.Length);
+                break;
             }
         }
 

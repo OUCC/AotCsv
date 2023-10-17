@@ -29,7 +29,6 @@ public sealed class CsvParser : IDisposable
     private bool _disposed;
 
     public ImmutableArray<int> ColumnMap { get; internal set; } = default!;
-    public int ColumnCount { get; }
 
     public CsvParser(TextReader reader, CsvDeserializeConfig config)
     {

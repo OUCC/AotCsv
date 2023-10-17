@@ -25,11 +25,11 @@ Console.WriteLine("Hello, World!");
 
 {
     var csv = $$""""""
-    ID,名,姓,MiddleName,BirthDay,IsStudent
-    0,"名前",名字,middle name,2023年10月14日,true
-    1,"""Mario"",""Mario""",Luigi,,2023年10月14日,False
+    ID,名,姓,MiddleName,BirthDay,IsStudent,Age
+    0,"名前",名字,middle name,2023年10月14日,true,1
+    1,"""Mario"",""Mario""",Luigi,,2023年10月14日,False,2
     2,"改行{{"\r\n\n"}}
-    ",new,line,2023年10月14日,false{{"\n"}}
+    ",new,line,2023年10月14日,false,4{{"\n"}}
     """""";
 
     using var sr = new StringReader(csv);
