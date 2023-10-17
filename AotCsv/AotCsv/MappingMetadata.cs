@@ -1,5 +1,11 @@
-﻿namespace Oucc.AotCsv;
+﻿using System.Collections.Immutable;
+using System.Globalization;
 
-public sealed record class MappingMetadata(Type Type, MemberMetadata[] Members) { }
+namespace Oucc.AotCsv;
 
-public sealed record class MemberMetadata(Type Type, string HeaderName, uint? Index, string? Format, string? DateTimeFormat, bool IsProperty, bool IsWriteOnly, bool IsReadOnly) { }
+public sealed record class MappingMetadata(Type Type, ImmutableArray<MemberMetadata> Members) { }
+
+public sealed record class MemberMetadata(int InternalId, Type Type, string Name, string HeaderName, uint? Index, string? Format, string? DateTimeFormat, DateTimeStyles DateTimeStyles, bool IsProperty, bool IsWritable, bool IsReadable) {
+    internal int InternalId { get; } = InternalId;
+}
+

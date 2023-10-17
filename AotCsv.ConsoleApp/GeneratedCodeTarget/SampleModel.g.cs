@@ -55,7 +55,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
 
         if (readValidCoulmns < 5)
         {
-            CsvInvalidHeaderException.Throw(rawColumnMap);
+            CsvInvalidHeaderException.Throw(rawColumnMap, Helper.MappingMetadata);
             columnMap = default;
             return;
         }
@@ -91,7 +91,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
                 case 1:
                     if (!int.TryParse(field, parser.Config.CultureInfo, out @Id))
                     {
-                        CsvTypeException.Throw(typeof(int), field.ToString(), @"Id");
+                        CsvTypeConvertException.Throw(field.ToString(), 1, Helper.MappingMetadata);
                         value = null;
                         return false;
                     }
@@ -108,7 +108,7 @@ internal partial class SampleModel : ICsvSerializable<SampleModel>
                 case 5:
                     if (!DateTime.TryParseExact(field, "yyyy年MM月dd日", parser.Config.CultureInfo, DateTimeStyles.None, out @BirthDay))
                     {
-                        CsvTypeException.Throw(typeof(DateTime), field.ToString(), @"BirthDay");
+                        CsvTypeConvertException.Throw(field.ToString(), 1, Helper.MappingMetadata);
                         value = null;
                         return false;
                     }
@@ -228,9 +228,8 @@ file static class Helper
 {
     public static MappingMetadata MappingMetadata => new(
             typeof(SampleModel),
-            new MemberMetadata[]
-            {
-                new(typeof(SampleModel), "",null,null,null, true, false, true)
-            }
+            ImmutableArray.Create<MemberMetadata>(
+                new MemberMetadata(1, typeof(SampleModel), "", "", null, null, null, DateTimeStyles.None, true, false, true)
+            )
         );
 }

@@ -28,7 +28,7 @@ namespace Oucc.AotCsv.Generator.Utility
 
             public void AppendLiteral(string value) => _builder.Append(value);
 
-            public void AppendFormatted(string value) => _builder.Append(value);
+            public void AppendFormatted(string? value) => _builder.Append(value);
 
             public void AppendFormatted(bool value) => _ = value ? _builder.Append("true") : _builder.Append("false");
 
