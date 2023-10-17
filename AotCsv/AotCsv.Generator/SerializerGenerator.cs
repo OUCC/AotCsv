@@ -79,7 +79,7 @@ public class SerializerGenerator : IIncrementalGenerator
 
            """);
 
-        DeserializeCodeGenerator.WriteHeaderCode(builder,targets, targetTypeName);
+        DeserializeCodeGenerator.WriteHeaderCode(builder, targets, targetTypeName);
 
         DeserializeCodeGenerator.WriteBodyCode(builder, targets, targetSymbol, reference);
 
@@ -91,6 +91,33 @@ public class SerializerGenerator : IIncrementalGenerator
         var result = builder.ToString();
 
         context.AddSource(targetTypeName + ".g.cs", result);
+    }
+
+    private static void WriteMetadata(StringBuilder builder, string targetTypeName, MemberMeta[] members)
+    {
+        builder.AppendFormatted($$"""
+            file static class Helper
+            {
+                public static global::Oucc.AotCsv.MappingMetadata MappingMetadata => new(
+                        typeof({{targetTypeName}}),
+                        new global::Oucc.AotCsv.MemberMetadata[]
+                        {
+
+            """);
+
+        foreach (var member in members)
+        {
+            builder.AppendFormatted($$"""
+                                new(typeof({{member.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}), {{member.HeaderName}}, {{member.Index}}, {{(member.Format is null ? "null" : string.Concat("\"", member.Format, "\""))}})
+                """);
+        }
+
+        builder.Append("""
+                        }
+                    };
+            }
+
+            """);
     }
 
     private static List<ITypeSymbol> GetTargetMembersContainingTypes(INamedTypeSymbol targetSymbol)

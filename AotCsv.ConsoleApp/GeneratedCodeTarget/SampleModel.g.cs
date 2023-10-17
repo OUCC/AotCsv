@@ -223,3 +223,14 @@ file class HelperConst
 
     internal const string BirthDayFormat = "yyyy年MM月dd日";
 }
+
+file static class Helper
+{
+    public static MappingMetadata MappingMetadata => new(
+            typeof(SampleModel),
+            new MemberMetadata[]
+            {
+                new(typeof(SampleModel), "",null,null,null, true, false, true)
+            }
+        );
+}
