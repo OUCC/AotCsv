@@ -118,7 +118,7 @@ internal static class DeserializeCodeGenerator
 
                         if (state == global::Oucc.AotCsv.GeneratorHelpers.FieldState.NoLine)
                         {
-                            value = null;
+                            value = default;
                             return false;
                         }
 
@@ -189,7 +189,7 @@ internal static class DeserializeCodeGenerator
                                 if (!global::System.DateTime.TryParseExact(field, @"{{format}}", parser.Config.CultureInfo, (global::System.Globalization.DateTimeStyles){{(int)styles}}, out @{{memberMeta.Symbol.Name}}))
                                 {
                                     global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{memberMeta.Symbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata);
-                                    value = null;
+                                    value = default;
                                     return false;
                                 }
                                 break;
@@ -204,7 +204,7 @@ internal static class DeserializeCodeGenerator
                                 if(!bool.TryParse(field, out @{{memberMeta.Symbol.Name}}))
                                 {
                                     global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{memberMeta.Symbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata);
-                                    value = null;
+                                    value = default;
                                     return false;
                                 }
                                 break;
@@ -216,10 +216,10 @@ internal static class DeserializeCodeGenerator
     {
         builder.AppendFormatted($$"""
                             case {{memberMeta.InternalId}}:
-                                if (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryParse<{{memberMeta.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>(field, parser.Config.CultureInfo, out @{{memberMeta.Symbol.Name}}))
+                                if (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryParse<{{memberMeta.TypeWithoutNullable.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>(field, parser.Config.CultureInfo, out @{{memberMeta.Symbol.Name}}))
                                 {
                                     global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{memberMeta.Symbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata);
-                                    value = null;
+                                    value = default;
                                     return false;
                                 }
                                 break;
