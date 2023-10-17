@@ -24,7 +24,7 @@ internal static class DeserializeCodeGenerator
 
         for (var i = 1; i < targetMembers.Length; i++)
         {
-            builder.Append(i);
+            builder.Append(targetMembers[i].InternalId);
             builder.Append(", ");
         }
         builder.Append(targetMembers.Length);
@@ -131,7 +131,7 @@ internal static class DeserializeCodeGenerator
         {
             if (member.Type.Equals(referenceSymbols.String, SymbolEqualityComparer.Default))
                 WriteParseString(builder, member);
-            else if (member.Type.Equals(referenceSymbols.DateTime, SymbolEqualityComparer.Default))
+            else if (member.TypeWithoutNullable.Equals(referenceSymbols.DateTime, SymbolEqualityComparer.Default))
                 WriteDateTimeParseExact(builder, member);
             else if (member.TypeWithoutNullable.Equals(referenceSymbols.Boolean, SymbolEqualityComparer.Default))
                 WriteParseBool(builder, member);
