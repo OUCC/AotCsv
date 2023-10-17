@@ -7,12 +7,12 @@ namespace Oucc.AotCsv.Generator;
 
 internal class MemberMeta
 {
-    public MemberMeta(int id, IFieldSymbol fieldSymbol) : this(id, fieldSymbol, MemberState.FullAccessable, fieldSymbol.Type) { }
+    public MemberMeta(int id, IFieldSymbol fieldSymbol) : this(id, fieldSymbol, MemberState.FullAccessible, fieldSymbol.Type) { }
 
     public MemberMeta(int id, IPropertySymbol propertySymbol) : this(
         id,
         propertySymbol,
-        MemberState.Property | (propertySymbol.IsReadOnly ? MemberState.Readable : propertySymbol.IsWriteOnly ? MemberState.Settable : MemberState.FullAccessable),
+        MemberState.Property | (propertySymbol.IsReadOnly ? MemberState.Readable : propertySymbol.IsWriteOnly ? MemberState.Settable : MemberState.FullAccessible),
         propertySymbol.Type)
     { }
 
@@ -30,8 +30,8 @@ internal class MemberMeta
         HeaderName = nameAttribute?.ConstructorArguments[0].Value as string ?? symbol.Name.Replace("\"", "\"\"");
         Index = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvIndexAttribute" }))?.ConstructorArguments[0].Value as uint?;
         Format = (attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvFormatAttribute" }))?.ConstructorArguments[0].Value as string)?.Replace("\"", "\"\"");
-        var datetTimeAttribute = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvDateTimeFormatAttribute" }));
-        DateTimeFormat = ((datetTimeAttribute?.ConstructorArguments[0].Value as string)?.Replace("\"", "\"\""), datetTimeAttribute?.ConstructorArguments[1].Value is DateTimeStyles styles ? styles : DateTimeStyles.None);
+        var dateTimeAttribute = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvDateTimeFormatAttribute" }));
+        DateTimeFormat = ((dateTimeAttribute?.ConstructorArguments[0].Value as string)?.Replace("\"", "\"\""), dateTimeAttribute?.ConstructorArguments[1].Value is DateTimeStyles styles ? styles : DateTimeStyles.None);
     }
 
     public int InternalId { get; }
@@ -69,6 +69,6 @@ internal class MemberMeta
         Property = 1,
         Settable = 2,
         Readable = 4,
-        FullAccessable = Settable | Readable,
+        FullAccessible = Settable | Readable,
     }
 }

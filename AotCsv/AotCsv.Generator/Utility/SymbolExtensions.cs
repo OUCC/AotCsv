@@ -2,7 +2,7 @@
 
 namespace Oucc.AotCsv.Generator.Utility;
 
-internal static class SymbolExtentions
+internal static class SymbolExtensions
 {
     public static bool EqualsByMetadataName(this ITypeSymbol? typeSymbol, ReadOnlySpan<string> fullyQualifiedMetadataName)
     {

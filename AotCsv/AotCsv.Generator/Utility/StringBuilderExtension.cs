@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Oucc.AotCsv.Generator.Utility
 {
-    internal static class StringBuilderExtention
+    internal static class StringBuilderExtension
     {
         /// <summary>
         /// bool のみ通常のものと結果が異なります。小文字になります。
@@ -20,9 +20,9 @@ namespace Oucc.AotCsv.Generator.Utility
         {
             private readonly StringBuilder _builder;
 
-            public AppendInterpolatedStringHandler(int litralLength, int formattedCount, StringBuilder builder)
+            public AppendInterpolatedStringHandler(int literalsLength, int formattedCount, StringBuilder builder)
             {
-                builder.EnsureCapacity(builder.Length + litralLength + formattedCount * 4);
+                builder.EnsureCapacity(builder.Length + literalsLength + formattedCount * 4);
                 _builder = builder;
             }
 
