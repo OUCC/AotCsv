@@ -8,11 +8,12 @@ namespace Oucc.AotCsv.Generator;
 internal static class DeserializeCodeGenerator
 {
     #region Header
-    public static void WriteHeaderCode(StringBuilder builder, MemberMeta[] targetMembers, string targetTypeName)
+    public static void WriteHeaderCode(StringBuilder builder, MemberMeta[] targetMembers, string targetTypeName, string helperClassName, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         targetMembers = targetMembers.Where(m => (m.State & MemberMeta.MemberState.Settable) == MemberMeta.MemberState.Settable).ToArray();
 
-        Debug.Assert(targetMembers.Length > 0);
         builder.AppendFormatted($$"""
             
                 static void global::Oucc.AotCsv.ICsvSerializable<{{targetTypeName}}>.ParseHeader(global::Oucc.AotCsv.GeneratorHelpers.CsvParser parser, out global::System.Collections.Immutable.ImmutableArray<int> columnMap)
@@ -76,7 +77,7 @@ internal static class DeserializeCodeGenerator
 
                     if (readValidColumns < {{targetMembers.Length}})
                     {
-                        global::Oucc.AotCsv.Exceptions.CsvInvalidHeaderException.Throw(rawColumnMap, {{targetMembers[0].Symbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata);
+                        global::Oucc.AotCsv.Exceptions.CsvInvalidHeaderException.Throw(rawColumnMap, {{helperClassName}}.MappingMetadata);
                         columnMap = default;
                         return;
                     }
@@ -89,13 +90,15 @@ internal static class DeserializeCodeGenerator
     #endregion
 
     #region Body
-    public static void WriteBodyCode(StringBuilder builder, MemberMeta[] targetMembers, ITypeSymbol targetType, ReferenceSymbols referenceSymbols)
+    public static void WriteBodyCode(StringBuilder builder, MemberMeta[] targetMembers, ITypeSymbol targetType, ReferenceSymbols referenceSymbols, string helperClassName, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         targetMembers = targetMembers.Where(m => (m.State & MemberMeta.MemberState.Settable) == MemberMeta.MemberState.Settable).ToArray();
 
         builder.AppendFormatted($$"""
             
-                static bool global::Oucc.AotCsv.ICsvSerializable<{{targetType.Name}}>.ParseRecord(global::Oucc.AotCsv.GeneratorHelpers.CsvParser parser, [global::System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out {{targetType.Name}} value)
+                static bool global::Oucc.AotCsv.ICsvSerializable<{{targetType.ToDisplayString(SymbolFormat.NameOnly)}}>.ParseRecord(global::Oucc.AotCsv.GeneratorHelpers.CsvParser parser, [global::System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out {{targetType.ToDisplayString(SymbolFormat.NameOnly)}} value)
                 {
 
             """);
@@ -132,11 +135,11 @@ internal static class DeserializeCodeGenerator
             if (member.Type.Equals(referenceSymbols.String, SymbolEqualityComparer.Default))
                 WriteParseString(builder, member);
             else if (member.TypeWithoutNullable.Equals(referenceSymbols.DateTime, SymbolEqualityComparer.Default))
-                WriteDateTimeParseExact(builder, member);
+                WriteDateTimeParseExact(builder, member, helperClassName);
             else if (member.TypeWithoutNullable.Equals(referenceSymbols.Boolean, SymbolEqualityComparer.Default))
-                WriteParseBool(builder, member);
+                WriteParseBool(builder, member, helperClassName);
             else
-                WriteSpanParsable(builder, member);
+                WriteSpanParsable(builder, member, helperClassName);
         }
 
         builder.AppendFormatted($$"""
@@ -145,12 +148,12 @@ internal static class DeserializeCodeGenerator
                         if (state == global::Oucc.AotCsv.GeneratorHelpers.FieldState.LastField)
                         {
                             if (columnIndex < parser.ColumnMap.Length - 1)
-                                global::Oucc.AotCsv.Exceptions.TooFewColumnsException.Throw({{targetType.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata, columnIndex + 1, parser.ColumnMap.Length);
+                                global::Oucc.AotCsv.Exceptions.TooFewColumnsException.Throw({{helperClassName}}.MappingMetadata, columnIndex + 1, parser.ColumnMap.Length);
                             break;
                         }
                     }
 
-                    value = new {{targetType.Name}}()
+                    value = new {{targetType.ToDisplayString(SymbolFormat.NameOnly)}}()
                     {
 
             """);
@@ -181,14 +184,14 @@ internal static class DeserializeCodeGenerator
             """);
     }
 
-    private static void WriteDateTimeParseExact(StringBuilder builder, MemberMeta memberMeta)
+    private static void WriteDateTimeParseExact(StringBuilder builder, MemberMeta memberMeta, string helperClassName)
     {
         var (format, styles) = memberMeta.DateTimeFormat;
         builder.AppendFormatted($$"""
                             case {{memberMeta.InternalId}}:
                                 if (!global::System.DateTime.TryParseExact(field, @"{{format}}", parser.Config.CultureInfo, (global::System.Globalization.DateTimeStyles){{(int)styles}}, out @{{memberMeta.Symbol.Name}}))
                                 {
-                                    global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{memberMeta.Symbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata);
+                                    global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{helperClassName}}.MappingMetadata);
                                     value = default;
                                     return false;
                                 }
@@ -197,13 +200,13 @@ internal static class DeserializeCodeGenerator
             """);
     }
 
-    private static void WriteParseBool(StringBuilder builder, MemberMeta memberMeta)
+    private static void WriteParseBool(StringBuilder builder, MemberMeta memberMeta, string helperClassName)
     {
         builder.AppendFormatted($$"""
                             case {{memberMeta.InternalId}}:
                                 if(!bool.TryParse(field, out @{{memberMeta.Symbol.Name}}))
                                 {
-                                    global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{memberMeta.Symbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata);
+                                    global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{helperClassName}}.MappingMetadata);
                                     value = default;
                                     return false;
                                 }
@@ -212,13 +215,13 @@ internal static class DeserializeCodeGenerator
             """);
     }
 
-    private static void WriteSpanParsable(StringBuilder builder, MemberMeta memberMeta)
+    private static void WriteSpanParsable(StringBuilder builder, MemberMeta memberMeta, string helperClassName)
     {
         builder.AppendFormatted($$"""
                             case {{memberMeta.InternalId}}:
                                 if (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryParse<{{memberMeta.TypeWithoutNullable.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>(field, parser.Config.CultureInfo, out @{{memberMeta.Symbol.Name}}))
                                 {
-                                    global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{memberMeta.Symbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}.Helper.MappingMetadata);
+                                    global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{helperClassName}}.MappingMetadata);
                                     value = default;
                                     return false;
                                 }

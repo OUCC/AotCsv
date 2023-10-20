@@ -35,7 +35,7 @@ Console.WriteLine("Hello, World!");
     using var sr = new StringReader(csv);
     using var csvr = new CsvReader(sr, CsvDeserializeConfig.InvariantCulture with { HasHeader = true });
 
-    var list = csvr.GetRecords<global::Oucc.AotCsv.ConsoleApp.SampleModel>();
+    var list = csvr.GetRecords<global::Oucc.AotCsv.ConsoleApp.SampleModel<int>>();
 
     foreach (var record in list)
     {

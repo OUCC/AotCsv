@@ -16,13 +16,11 @@ public class CsvInvalidHeaderException : CsvBadDataException
 
     public override string ToString()
     {
-        var columnMap = Metadata.Members.Where(m => m.IsWritable)
-            .Select((meta, i) => (meta, ReadColumnMap.Contains(i + 1)))
-            .Where(p => !p.Item2);
+        var columnMap = Metadata.Members.Where(m => m.IsWritable && !ReadColumnMap.Contains(m.InternalId));
 
         var builder = new StringBuilder();
         builder.Append("Header: ");
-        foreach(var (meta, _) in columnMap)
+        foreach (var meta in columnMap)
         {
             builder.Append($"\"{meta.HeaderName}\" ");
         }
