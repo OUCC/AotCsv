@@ -25,17 +25,17 @@ Console.WriteLine("Hello, World!");
 
 {
     var csv = $$""""""
-    ID,名,姓,MiddleName,BirthDay,IsStudent,Age
-    0,"名前",名字,middle name,2023年10月14日,true,1
-    1,"""Mario"",""Mario""",Luigi,,2023年10月14日,False,2
+    ID,名,姓,MiddleName,BirthDay,IsStudent,Age,Data
+    0,"名前",名字,middle name,2023年10月14日,true,1,3
+    1,"""Mario"",""Mario""",Luigi,,2023年10月14日,False,2,5
     2,"改行{{"\r\n\n"}}
-    ",new,line,2023年10月14日,false,4{{"\n"}}
+    ",new,line,2023年10月14日,false,4,9{{"\n"}}
     """""";
 
     using var sr = new StringReader(csv);
     using var csvr = new CsvReader(sr, CsvDeserializeConfig.InvariantCulture with { HasHeader = true });
 
-    var list = csvr.GetRecords<global::Oucc.AotCsv.ConsoleApp.SampleModel<int>>();
+    var list = csvr.GetRecords<Oucc.AotCsv.ConsoleApp.SampleModel<int, int>>();
 
     foreach (var record in list)
     {

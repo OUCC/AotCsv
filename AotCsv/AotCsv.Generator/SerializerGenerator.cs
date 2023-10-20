@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Oucc.AotCsv.Generator.Comparer;
@@ -39,8 +40,9 @@ public class SerializerGenerator : IIncrementalGenerator
         var targets = GetTargetMembers(targetSymbol, reference, cancellationToken);
         var containingTypes = GetTargetSymbolContainingTypes(targetSymbol, cancellationToken);
         var helperClassName = targetSymbol.Arity == 0
-            ? string.Concat(targetSymbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), ".Helper")
-            : string.Concat(targetSymbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), ".Helper<", string.Join(", ", targetSymbol.TypeParameters.Select(t => t.ToDisplayString(SymbolFormat.NameOnly))), ">");
+            ? "Helper"
+            : string.Concat("Helper<", string.Join(", ", targetSymbol.TypeParameters.Select(t => t.ToDisplayString(SymbolFormat.NameOnly))), ">");
+        var fullHelperClassName = string.Concat(targetSymbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), ".", helperClassName);
 
         cancellationToken.ThrowIfCancellationRequested();
         builder.Append("""
@@ -85,16 +87,16 @@ public class SerializerGenerator : IIncrementalGenerator
 
            """);
 
-        DeserializeCodeGenerator.WriteHeaderCode(builder, targets, targetTypeName, helperClassName, cancellationToken);
+        DeserializeCodeGenerator.WriteHeaderCode(builder, targets, targetTypeName, fullHelperClassName, cancellationToken);
 
-        DeserializeCodeGenerator.WriteBodyCode(builder, targets, targetSymbol, reference, helperClassName, cancellationToken);
+        DeserializeCodeGenerator.WriteBodyCode(builder, targets, targetSymbol, reference, fullHelperClassName, cancellationToken);
 
         for (int i = 0; i < containingTypes.Count + 1; i++)
         {
             builder.Append("}\n");
         }
 
-        WriteMetadata(builder, helperClassName, targetTypeName, targets, cancellationToken);
+        WriteMetadata(builder, helperClassName, targetTypeName, targetSymbol, targets, cancellationToken);
 
         builder.Append("#nullable restore\n");
         var result = builder.ToString();
@@ -102,12 +104,65 @@ public class SerializerGenerator : IIncrementalGenerator
         context.AddSource(targetSymbol.Name + ".g.cs", result);
     }
 
-    private static void WriteMetadata(StringBuilder builder, string className, string targetTypeName, MemberMeta[] members, CancellationToken cancellationToken)
+    private static void WriteMetadata(StringBuilder builder, string className, string targetTypeName, INamedTypeSymbol targetType, MemberMeta[] members, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         builder.AppendFormatted($$"""
             file static class {{className}}
+            """);
+        if (targetType.Arity > 0)
+        {
+            foreach (var typePrameter in targetType.TypeParameters)
+            {
+                if (typePrameter.ConstraintTypes.Length == 0
+                    && !typePrameter.HasNotNullConstraint
+                    && !typePrameter.HasReferenceTypeConstraint
+                    && !typePrameter.HasValueTypeConstraint
+                    && !typePrameter.HasUnmanagedTypeConstraint)
+                    continue;
+                builder.AppendFormatted($$"""
+
+                            where {{typePrameter.Name}} :
+                    """);
+                var appendedFirst = false;
+                if (typePrameter.HasNotNullConstraint)
+                {
+                    builder.Append(" notnull");
+                    appendedFirst = true;
+                }
+                else if (typePrameter.HasReferenceTypeConstraint)
+                {
+                    builder.Append(" class");
+                    appendedFirst = true;
+                }
+                else if (typePrameter.HasValueTypeConstraint)
+                {
+                    builder.Append(" struct");
+                    appendedFirst = true;
+                }
+                else if (typePrameter.HasUnmanagedTypeConstraint)
+                {
+                    builder.Append(" unmanaged");
+                    appendedFirst = true;
+                }
+
+                foreach (var constraintType in typePrameter.ConstraintTypes)
+                {
+                    if (appendedFirst) builder.Append(", ");
+                    else builder.Append(' ');
+                    builder.Append(constraintType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                }
+
+                if (typePrameter.HasConstructorConstraint)
+                {
+                    if (appendedFirst) builder.Append(", new()");
+                    else builder.Append(" new()");
+                }
+            }
+        }
+        builder.AppendFormatted($$"""
+
             {
                 public static global::Oucc.AotCsv.MappingMetadata MappingMetadata => new(
                         typeof({{targetTypeName}}),
@@ -235,14 +290,43 @@ public class SerializerGenerator : IIncrementalGenerator
         if (type.NullableAnnotation == NullableAnnotation.Annotated && type.IsValueType)
         {
             var typeArgument = (type as INamedTypeSymbol)!.TypeArguments[0];
-            return typeArgument.AllInterfaces.Contains(reference.ISpanFormattable)
+            if (typeArgument is ITypeParameterSymbol typeParameter)
+            {
+                return IsValidConstraint(type, typeParameter.ConstraintTypes, reference);
+            }
+            return IsValidConstraint(type, type.AllInterfaces, reference)
                 || typeArgument.Equals(reference.Boolean, SymbolEqualityComparer.Default);// boolのAnnotatedはここで拾う
+        }
+        else if (type is ITypeParameterSymbol typeParameter)
+        {
+            return IsValidConstraint(type, typeParameter.ConstraintTypes, reference);
         }
         else
         {
-            return type.AllInterfaces.Contains(reference.ISpanFormattable)
+            return IsValidConstraint(type, type.AllInterfaces, reference)
                 || type.Equals(reference.String, SymbolEqualityComparer.Default)
                 || type.Equals(reference.Boolean, SymbolEqualityComparer.Default);// boolのNotAnnotatedはここで拾える
+        }
+
+        static bool IsValidConstraint<T>(ITypeSymbol baseType, ImmutableArray<T> types, ReferenceSymbols reference) where T : ITypeSymbol
+        {
+            var count = 0;
+            foreach (var t in types)
+            {
+                if (t is INamedTypeSymbol namedType)
+                {
+                    if (namedType.Equals(reference.ISpanFormattable, SymbolEqualityComparer.Default))
+                        count++;
+                    else if (namedType.OriginalDefinition.Equals(reference.ISpanParsable_T, SymbolEqualityComparer.Default)
+                            && namedType.TypeArguments.Length == 1
+                            && namedType.TypeArguments[0].Equals(baseType, SymbolEqualityComparer.Default))
+                        count++;
+                }
+
+                if (count >= 2) return true;
+            }
+
+            return false;
         }
     }
 }

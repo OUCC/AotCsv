@@ -106,7 +106,7 @@ internal static class DeserializeCodeGenerator
         foreach (var member in targetMembers)
         {
             builder.AppendFormatted($$"""
-                        {{member.TypeWithoutNullable.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} @{{member.Symbol.Name}} = default!;
+                        {{member.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} @{{member.Symbol.Name}} = default!;
 
                 """);
         }
@@ -187,7 +187,24 @@ internal static class DeserializeCodeGenerator
     private static void WriteDateTimeParseExact(StringBuilder builder, MemberMeta memberMeta, string helperClassName)
     {
         var (format, styles) = memberMeta.DateTimeFormat;
-        builder.AppendFormatted($$"""
+        if (memberMeta.IsNullableStruct)
+            builder.AppendFormatted($$"""
+                            case {{memberMeta.InternalId}}:
+                                {
+                                    if (field.IsEmpty) @{{memberMeta.Symbol.Name}} = null;
+                                    else if (!global::System.DateTime.TryParseExact(field, @"{{format}}", parser.Config.CultureInfo, (global::System.Globalization.DateTimeStyles){{(int)styles}}, out global::System.DateTime temp))
+                                    {
+                                        global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{helperClassName}}.MappingMetadata);
+                                        value = default;
+                                        return false;
+                                    }
+                                    else @{{memberMeta.Symbol.Name}} = temp;
+                                    break;
+                                }
+
+            """);
+        else
+            builder.AppendFormatted($$"""
                             case {{memberMeta.InternalId}}:
                                 if (!global::System.DateTime.TryParseExact(field, @"{{format}}", parser.Config.CultureInfo, (global::System.Globalization.DateTimeStyles){{(int)styles}}, out @{{memberMeta.Symbol.Name}}))
                                 {
@@ -202,22 +219,56 @@ internal static class DeserializeCodeGenerator
 
     private static void WriteParseBool(StringBuilder builder, MemberMeta memberMeta, string helperClassName)
     {
-        builder.AppendFormatted($$"""
+        if (memberMeta.IsNullableStruct)
+            builder.AppendFormatted($$"""
                             case {{memberMeta.InternalId}}:
-                                if(!bool.TryParse(field, out @{{memberMeta.Symbol.Name}}))
+                                {
+                                    if (field.IsEmpty) @{{memberMeta.Symbol.Name}} = null;
+                                    else if (!bool.TryParse(field, out bool temp))
+                                    {
+                                        global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{helperClassName}}.MappingMetadata);
+                                        value = default;
+                                        return false;
+                                    }
+                                    else @{{memberMeta.Symbol.Name}} = temp;
+                                    break;
+                                }
+                
+            """);
+        else
+            builder.AppendFormatted($$"""
+                            case {{memberMeta.InternalId}}:
+                                if (!bool.TryParse(field, out @{{memberMeta.Symbol.Name}}))
                                 {
                                     global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{helperClassName}}.MappingMetadata);
                                     value = default;
                                     return false;
                                 }
                                 break;
-
+                
             """);
     }
 
     private static void WriteSpanParsable(StringBuilder builder, MemberMeta memberMeta, string helperClassName)
     {
-        builder.AppendFormatted($$"""
+        if (memberMeta.IsNullableStruct)
+            builder.AppendFormatted($$"""
+                            case {{memberMeta.InternalId}}:
+                                {
+                                    if (field.IsEmpty) @{{memberMeta.Symbol.Name}} = null;
+                                    else if (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryParse<{{memberMeta.TypeWithoutNullable.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>(field, parser.Config.CultureInfo, out {{memberMeta.TypeWithoutNullable.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}} temp))
+                                    {
+                                        global::Oucc.AotCsv.Exceptions.CsvTypeConvertException.Throw(field.ToString(), {{memberMeta.InternalId}}, {{helperClassName}}.MappingMetadata);
+                                        value = default;
+                                        return false;
+                                    }
+                                    else @{{memberMeta.Symbol.Name}} = temp;
+                                    break;
+                                }
+                
+            """);
+        else
+            builder.AppendFormatted($$"""
                             case {{memberMeta.InternalId}}:
                                 if (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryParse<{{memberMeta.TypeWithoutNullable.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}}>(field, parser.Config.CultureInfo, out @{{memberMeta.Symbol.Name}}))
                                 {
@@ -226,7 +277,7 @@ internal static class DeserializeCodeGenerator
                                     return false;
                                 }
                                 break;
-
+                
             """);
     }
     #endregion

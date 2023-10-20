@@ -3,7 +3,7 @@
 namespace Oucc.AotCsv.ConsoleApp;
 
 [CsvSerializable]
-internal partial class SampleModel<T> where T : struct, ISpanFormattable, ISpanParsable<T>
+internal partial class SampleModel<T,S> where T : struct, ISpanFormattable, ISpanParsable<T>
 {
     [CsvInclude]
     public T Data { get; set; }
