@@ -23,7 +23,8 @@ internal class MemberMeta
         Symbol = symbol;
         State = MemberState;
         Type = typeSymbol;
-        TypeWithoutNullable = typeSymbol.EqualsByMetadataName(new[] { "System", "Nullable`1" }) ? ((INamedTypeSymbol)typeSymbol).TypeArguments[0] : typeSymbol;
+        IsNullableStruct = typeSymbol.EqualsByMetadataName(new[] { "System", "Nullable`1" });
+        TypeWithoutNullable = IsNullableStruct ? ((INamedTypeSymbol)typeSymbol).TypeArguments[0] : typeSymbol;
 
         var attributes = symbol.GetAttributes();
         var nameAttribute = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvNameAttribute" }));
@@ -43,6 +44,8 @@ internal class MemberMeta
     public ITypeSymbol Type { get; }
 
     public ITypeSymbol TypeWithoutNullable { get; }
+
+    public bool IsNullableStruct { get; }
 
     /// <summary>
     /// Headerの名前 エスケープ済み

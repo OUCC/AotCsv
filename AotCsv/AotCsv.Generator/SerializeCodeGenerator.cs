@@ -8,8 +8,10 @@ namespace Oucc.AotCsv.Generator;
 internal static class SerializeCodeGenerator
 {
     #region Header
-    public static void CreateHeaderCode(MemberMeta[] targetMembers, StringBuilder builder)
+    public static void CreateHeaderCode(MemberMeta[] targetMembers, StringBuilder builder, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         builder.AppendFormatted($$"""
                     if (context.QuoteOption == {{Constants.QuoteOption}}.MustQuote)
                     {
@@ -50,8 +52,10 @@ internal static class SerializeCodeGenerator
     #endregion 
 
     #region Body
-    public static void CreateBodyCode(StringBuilder builder, MemberMeta[] targetMembers, ReferenceSymbols reference)
+    public static void CreateBodyCode(StringBuilder builder, MemberMeta[] targetMembers, ReferenceSymbols reference, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         builder.Append("""
 
                     char[] buffer = global::System.Buffers.ArrayPool<char>.Shared.Rent(1024);

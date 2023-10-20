@@ -13,6 +13,7 @@ internal class ReferenceSymbols
 
     internal INamedTypeSymbol ISpanFormattable { get; }
     internal INamedTypeSymbol IFormattable { get; }
+    internal INamedTypeSymbol ISpanParsable_T { get; }
     internal INamedTypeSymbol Nullable_T { get; }
     internal INamedTypeSymbol DateTime { get; }
     internal INamedTypeSymbol String { get; }
@@ -29,6 +30,7 @@ internal class ReferenceSymbols
         Compilation = compilation;
         ISpanFormattable = GetTypeByMetadataName(compilation, "System.ISpanFormattable");
         IFormattable = GetTypeByMetadataName(compilation, "System.IFormattable");
+        ISpanParsable_T = GetTypeByMetadataName(compilation, "System.ISpanParsable`1").OriginalDefinition;
         Nullable_T = GetTypeByMetadataName(compilation, "System.Nullable`1").ConstructUnboundGenericType();
         DateTime = GetTypeByMetadataName(compilation, "System.DateTime");
         String = GetTypeByMetadataName(compilation, "System.String");
