@@ -292,9 +292,9 @@ public class SerializerGenerator : IIncrementalGenerator
             var typeArgument = (type as INamedTypeSymbol)!.TypeArguments[0];
             if (typeArgument is ITypeParameterSymbol typeParameter)
             {
-                return IsValidConstraint(type, typeParameter.ConstraintTypes, reference);
+                return IsValidConstraint(typeParameter, typeParameter.ConstraintTypes, reference);
             }
-            return IsValidConstraint(type, type.AllInterfaces, reference)
+            return IsValidConstraint(typeArgument, typeArgument.AllInterfaces, reference)
                 || typeArgument.Equals(reference.Boolean, SymbolEqualityComparer.Default);// boolのAnnotatedはここで拾う
         }
         else if (type is ITypeParameterSymbol typeParameter)
