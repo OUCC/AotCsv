@@ -37,8 +37,6 @@ public sealed class CsvParser : IDisposable
         Config = config;
     }
 
-    public FieldState TryGetLine(out ReadOnlySpan<char> line) { throw new NotImplementedException(); }
-
     public ArrayContainer TryGetField(out FieldState fieldState)
     {
         var state = ReadingState.WaitingQuoteOrValue;

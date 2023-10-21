@@ -9,15 +9,15 @@ public class CsvTypeConvertException : CsvBadDataException
 
     public override string Message => ToString();
 
-    public CsvTypeConvertException(string fieldValue, int metadataIndex, MappingMetadata mappingMetadata) : base(mappingMetadata)
+    public CsvTypeConvertException(string fieldValue, int internalId, MappingMetadata mappingMetadata) : base(mappingMetadata)
     {
         FieldValue = fieldValue;
-        Member = mappingMetadata.Members[metadataIndex];
+        Member = mappingMetadata.Members.Single(m => m.InternalId == internalId);
     }
 
     [DoesNotReturn]
-    public static void Throw(string fieldValue, int metadataIndex, MappingMetadata mappingMetadata)
-        => throw new CsvTypeConvertException(fieldValue,metadataIndex, mappingMetadata);
+    public static void Throw(string fieldValue, int internalId, MappingMetadata mappingMetadata)
+        => throw new CsvTypeConvertException(fieldValue, internalId, mappingMetadata);
 
     public override string ToString()
     {

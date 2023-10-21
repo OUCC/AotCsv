@@ -5,13 +5,13 @@ namespace Oucc.AotCsv;
 
 public sealed class CsvReader : IDisposable
 {
-    private CsvParser _parser;
+    private readonly CsvParser _parser;
 
     public CsvDeserializeConfig Config { get; }
 
     private bool _disposed;
 
-    public CsvReader(TextReader reader, CultureInfo cultureInfo) : this(reader, new CsvDeserializeConfig(cultureInfo)) { }
+    public CsvReader(TextReader reader, CultureInfo cultureInfo, bool leaveOpen = false) : this(reader, new CsvDeserializeConfig(cultureInfo) { LeaveOpen = leaveOpen }) { }
 
     public CsvReader(TextReader reader, CsvDeserializeConfig config) : this(new CsvParser(reader, config), config) { }
 

@@ -23,12 +23,11 @@ internal static class DeserializeCodeGenerator
                         columnMap = global::System.Collections.Immutable.ImmutableArray.Create<int>(
             """);
 
-        for (var i = 1; i < targetMembers.Length; i++)
+        for (var i = 0; i < targetMembers.Length; i++)
         {
+            if (i > 0) builder.Append(", ");
             builder.Append(targetMembers[i].InternalId);
-            builder.Append(", ");
         }
-        builder.Append(targetMembers.Length);
 
         builder.AppendFormatted($$"""
             );

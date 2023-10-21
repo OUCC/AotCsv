@@ -6,7 +6,7 @@ namespace Oucc.AotCsv.ConsoleApp;
 internal partial class SampleModel<T,S> where T : struct, ISpanFormattable, ISpanParsable<T>
 {
     [CsvInclude]
-    public T Data { get; set; }
+    public T? Data { get; set; }
 
     [CsvName("ID")]
     public int Id { get; set; }
