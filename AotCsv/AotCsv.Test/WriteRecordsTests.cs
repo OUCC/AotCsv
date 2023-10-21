@@ -44,6 +44,24 @@ public partial class WriteRecordsTests
             new SampleClass(0, _testTime, null),
             new SampleClass(100, _testTime, _utcNow)
         };
+    private static readonly List<StructGenericClass<int>> _structGenericClassList = new()
+    {
+        new StructGenericClass<int>(){T1IntProperty = 1},
+        new StructGenericClass<int>(){T1IntProperty = 2},
+    };
+    private static readonly List<ClassGenericClass<FormattableAndParsableClass>> _classGenericClassList = new()
+    {
+        new ClassGenericClass<FormattableAndParsableClass>(){},
+        new ClassGenericClass<FormattableAndParsableClass>(){ T1FormattableParsableClassProperty = new("test")},
+    };
+    private static readonly List<SampleGenericClass<char, int, FormattableAndParsableClass>> _sampleGenericClassList = new()
+    {
+        new SampleGenericClass<char, int, FormattableAndParsableClass>(),
+    };
+    private static readonly List<SampleGenericClass<char, int, FormattableAndParsableClass>> _sampleGenericClassListForShouldQuote = new()
+    {
+        new SampleGenericClass<char, int, FormattableAndParsableClass>(){T1Field='\"'},
+    };
 
     public static readonly object[][] FieldOnlyClassTestSource = new object[][]
     {
@@ -64,6 +82,26 @@ public partial class WriteRecordsTests
         new object[] { _shouldOrMustNoQuoteSampleClassExpected, QuoteOption.MustNoQuote, _sampleClassList },
         new object[] { _mustQuoteSampleClassExpected, QuoteOption.MustQuote, _sampleClassList },
         new object[] { _shouldOrMustNoQuoteSampleClassExpected, QuoteOption.ShouldQuote, _sampleClassList }
+    };
+
+    public static readonly object[][] StructGenericClassTestSource = new object[][]
+    {
+        new object[] { $"1{Environment.NewLine}2{Environment.NewLine}", QuoteOption.MustNoQuote, _structGenericClassList},
+        new object[] { $"\"1\"{Environment.NewLine}\"2\"{Environment.NewLine}", QuoteOption.MustQuote, _structGenericClassList},
+        new object[] { $"1{Environment.NewLine}2{Environment.NewLine}", QuoteOption.ShouldQuote, _structGenericClassList}
+    };
+
+    public static readonly object[][] ClassGenericClassTestSource = new object[][]
+    {
+        new object[] { $"FormattableParsableClass{Environment.NewLine}test{Environment.NewLine}", QuoteOption.MustNoQuote, _classGenericClassList},
+        new object[] { $"\"FormattableParsableClass\"{Environment.NewLine}\"test\"{Environment.NewLine}", QuoteOption.MustQuote, _classGenericClassList},
+        new object[] { $"FormattableParsableClass{Environment.NewLine}test{Environment.NewLine}", QuoteOption.ShouldQuote, _classGenericClassList}
+    };
+    public static readonly object[][] SampleGenericClassTestSource = new object[][]
+    {
+        new object[] { $"False,{'\0'},0,{Environment.NewLine}", QuoteOption.MustNoQuote, _sampleGenericClassList },
+        new object[] { $"\"False\",\"{'\0'}\",\"0\",\"\"{Environment.NewLine}", QuoteOption.MustQuote, _sampleGenericClassList },
+        new object[] { $"False,\"\"\"\",0,{Environment.NewLine}", QuoteOption.ShouldQuote, _sampleGenericClassListForShouldQuote }
     };
 
     [Theory]
@@ -106,6 +144,54 @@ public partial class WriteRecordsTests
         using var writer = new StreamWriter(ms, SerializeTestHelper.UnicodeNoBOM);
         var config = new CsvSerializeConfig(option, CultureInfo.InvariantCulture);
         using var csvWriter = new CsvWriter<SampleClass>(writer, config);
+        csvWriter.WriteRecords(list);
+        writer.Flush();
+        var csvText = SerializeTestHelper.UnicodeNoBOM.GetString(ms.ToArray());
+        writer.Close();
+
+        Assert.Equal(expected, csvText);
+    }
+
+    [Theory]
+    [MemberData(nameof(StructGenericClassTestSource))]
+    internal void StructGenericClassTest(string expected, QuoteOption option, List<StructGenericClass<int>> list)
+    {
+        using var ms = new MemoryStream();
+        using var writer = new StreamWriter(ms, SerializeTestHelper.UnicodeNoBOM);
+        var config = new CsvSerializeConfig(option, CultureInfo.InvariantCulture);
+        using var csvWriter = new CsvWriter<StructGenericClass<int>>(writer, config);
+        csvWriter.WriteRecords(list);
+        writer.Flush();
+        var csvText = SerializeTestHelper.UnicodeNoBOM.GetString(ms.ToArray());
+        writer.Close();
+
+        Assert.Equal(expected, csvText);
+    }
+
+    [Theory]
+    [MemberData(nameof(ClassGenericClassTestSource))]
+    internal void ClassGenericClassTest(string expected, QuoteOption option, List<ClassGenericClass<FormattableAndParsableClass>> list)
+    {
+        using var ms = new MemoryStream();
+        using var writer = new StreamWriter(ms, SerializeTestHelper.UnicodeNoBOM);
+        var config = new CsvSerializeConfig(option, CultureInfo.InvariantCulture);
+        using var csvWriter = new CsvWriter<ClassGenericClass<FormattableAndParsableClass>>(writer, config);
+        csvWriter.WriteRecords(list);
+        writer.Flush();
+        var csvText = SerializeTestHelper.UnicodeNoBOM.GetString(ms.ToArray());
+        writer.Close();
+
+        Assert.Equal(expected, csvText);
+    }
+
+    [Theory]
+    [MemberData(nameof(SampleGenericClassTestSource))]
+    internal void SampleGenericClassTest(string expected, QuoteOption option, List<SampleGenericClass<char, int, FormattableAndParsableClass>> list)
+    {
+        using var ms = new MemoryStream();
+        using var writer = new StreamWriter(ms, SerializeTestHelper.UnicodeNoBOM);
+        var config = new CsvSerializeConfig(option, CultureInfo.InvariantCulture);
+        using var csvWriter = new CsvWriter<SampleGenericClass<char, int, FormattableAndParsableClass>> (writer, config);
         csvWriter.WriteRecords(list);
         writer.Flush();
         var csvText = SerializeTestHelper.UnicodeNoBOM.GetString(ms.ToArray());
