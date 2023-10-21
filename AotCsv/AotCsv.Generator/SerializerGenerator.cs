@@ -150,7 +150,11 @@ public class SerializerGenerator : IIncrementalGenerator
                 foreach (var constraintType in typePrameter.ConstraintTypes)
                 {
                     if (appendedFirst) builder.Append(", ");
-                    else builder.Append(' ');
+                    else
+                    {
+                        builder.Append(' ');
+                        appendedFirst = true;
+                    }
                     builder.Append(constraintType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
                 }
 

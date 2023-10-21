@@ -76,9 +76,9 @@ internal static class SerializeCodeGenerator
                 NullableStringSerializeCodegen(builder, symbol.Name);
             }
             // struct?のとき
-            else if (typeSymbol.NullableAnnotation == NullableAnnotation.Annotated && typeSymbol.IsValueType)
+            else if (targetMembers[i].IsNullableStruct)
             {
-                var typeParameter = (typeSymbol as INamedTypeSymbol)!.TypeArguments[0];
+                var typeParameter = targetMembers[i].TypeWithoutNullable;
                 if (typeParameter.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
                     DateTimeSerializeCodegen(builder, symbol, reference, true);
@@ -91,15 +91,15 @@ internal static class SerializeCodeGenerator
                 {
                     NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name, true);
                 }
-                else if (typeParameter.AllInterfaces.Contains(reference.ISpanFormattable))
+                else
                 {
                     NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name);
                 }
             }
-            // class?のとき
+            // class? と struct制約のない型パラメータ
             else if (typeSymbol.NullableAnnotation != NullableAnnotation.NotAnnotated
                      && typeSymbol.IsReferenceType
-                     && typeSymbol.AllInterfaces.Contains(reference.ISpanFormattable))
+                     || typeSymbol is ITypeParameterSymbol parameterSymbol && !parameterSymbol.HasValueTypeConstraint && !parameterSymbol.HasReferenceTypeConstraint)
             {
                 NullableClassISpanFormattableSerializeCodegen(builder, symbol.Name);
             }
@@ -117,7 +117,7 @@ internal static class SerializeCodeGenerator
                 {
                     ISpanFormattableSerializeCodegen (builder, symbol.Name, true);
                 }
-                else if (typeSymbol.AllInterfaces.Contains(reference.ISpanFormattable))
+                else
                 {
                     ISpanFormattableSerializeCodegen(builder, symbol.Name);
                 }
