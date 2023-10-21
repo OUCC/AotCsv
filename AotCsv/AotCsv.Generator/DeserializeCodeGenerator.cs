@@ -126,7 +126,7 @@ internal static class DeserializeCodeGenerator
 
                         switch (targetIndex)
                         {
-
+            
             """);
 
         foreach (var member in targetMembers)
@@ -169,7 +169,7 @@ internal static class DeserializeCodeGenerator
                     };
                     return true;
                 }
-
+        
             """);
     }
 
@@ -232,7 +232,7 @@ internal static class DeserializeCodeGenerator
                                     else @{{memberMeta.Symbol.Name}} = temp;
                                     break;
                                 }
-                
+
             """);
         else
             builder.AppendFormatted($$"""
@@ -244,7 +244,7 @@ internal static class DeserializeCodeGenerator
                                     return false;
                                 }
                                 break;
-                
+
             """);
     }
 
@@ -264,7 +264,7 @@ internal static class DeserializeCodeGenerator
                                     else @{{memberMeta.Symbol.Name}} = temp;
                                     break;
                                 }
-                
+
             """);
         else
             builder.AppendFormatted($$"""
@@ -276,7 +276,7 @@ internal static class DeserializeCodeGenerator
                                     return false;
                                 }
                                 break;
-                
+
             """);
     }
     #endregion

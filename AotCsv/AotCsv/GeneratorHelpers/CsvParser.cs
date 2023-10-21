@@ -25,6 +25,7 @@ public sealed class CsvParser : IDisposable
     /// 読み切ったかどうか
     /// </summary>
     private bool _isRead;
+    private bool _expectedNextValue = true;
 
     private bool _disposed;
 
@@ -215,7 +216,12 @@ public sealed class CsvParser : IDisposable
 
             if (_isRead && _bufferLength == 0)
             {
-                fieldState = length != 0 ? FieldState.LastField : FieldState.NoLine;
+                if (_expectedNextValue)
+                {
+                    fieldState = FieldState.LastField;
+                    _expectedNextValue = false;
+                }
+                else fieldState = length != 0 ? FieldState.LastField : FieldState.NoLine;
                 return new ArrayContainer(buffer, length);
             }
             spanBuffer = _buffer.Length == _bufferOffset ? default : _buffer.AsSpan()[_bufferOffset.._bufferLength];
@@ -267,7 +273,7 @@ public sealed class CsvParser : IDisposable
         }
     }
 
-    private void EnsureBuffer(ref char[] buffer, Span<char> contentBuffer, int additionalLength)
+    private static void EnsureBuffer(ref char[] buffer, Span<char> contentBuffer, int additionalLength)
     {
         var requiredLength = contentBuffer.Length + additionalLength;
         if (buffer.Length > requiredLength) return;
