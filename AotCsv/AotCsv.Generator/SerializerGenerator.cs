@@ -98,7 +98,7 @@ public class SerializerGenerator : IIncrementalGenerator
         builder.Append("#nullable restore\n");
         var result = builder.ToString();
 
-        context.AddSource(targetSymbol.Name + ".g.cs", result);
+        context.AddSource(targetSymbol.Name.Replace('<', '_').Replace('>', '_') + ".g.cs", result);
     }
 
     private static void WriteMetadata(StringBuilder builder, TargetTypeMeta targetType, MemberMeta[] members, CancellationToken cancellationToken)

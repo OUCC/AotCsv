@@ -33,7 +33,7 @@ internal class MemberMeta
 
         var attributes = symbol.GetAttributes();
         var nameAttribute = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvNameAttribute" }));
-        HeaderName = nameAttribute?.ConstructorArguments[0].Value as string ?? symbol.Name.Replace("\"", "\"\"");
+        HeaderName = (nameAttribute?.ConstructorArguments[0].Value as string ?? symbol.Name).Replace("\"", "\"\"");
         Index = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvIndexAttribute" }))?.ConstructorArguments[0].Value as uint?;
         Format = (attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvFormatAttribute" }))?.ConstructorArguments[0].Value as string)?.Replace("\"", "\"\"");
         var dateTimeAttribute = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvDateTimeFormatAttribute" }));

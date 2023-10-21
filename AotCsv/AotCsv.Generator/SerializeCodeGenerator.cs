@@ -15,12 +15,12 @@ internal static class SerializeCodeGenerator
         builder.AppendFormatted($$"""
                     if (context.QuoteOption == {{Constants.QuoteOption}}.MustQuote)
                     {
-                        writer.Write($"
+                        writer.Write($@"
             """);
 
         for (var i = 0; i < targetMembers.Length; i++)
         {
-            builder.AppendFormatted($@"\""{targetMembers[i].HeaderName}\""");
+            builder.AppendFormatted($"\"\"{targetMembers[i].HeaderName.Replace("\"\"","\"\"\"\"")}\"\"");
             if (i < targetMembers.Length - 1)
                 builder.Append(',');
         }
@@ -28,15 +28,19 @@ internal static class SerializeCodeGenerator
         builder.AppendFormatted($$"""
             {context.NewLine}");
                     }
-                    else
+                    else if (context.QuoteOption == {{Constants.QuoteOption}}.ShouldQuote)
                     {
-                        writer.Write($"
+                        writer.Write($@"
             """);
 
-
+        var canMustNoQuote = true;
         for (var i = 0; i < targetMembers.Length; i++)
         {
-            if (targetMembers[i].HeaderName.AsSpan().IndexOfAny('"', ',') >= 0) builder.AppendFormatted($@"\""{targetMembers[i].HeaderName}\""");
+            if (targetMembers[i].HeaderName.AsSpan().IndexOfAny("\",\r\n".AsSpan()) >= 0)
+            {
+                builder.AppendFormatted($"\"\"{targetMembers[i].HeaderName.Replace("\"\"", "\"\"\"\"")}\"\"");
+                canMustNoQuote = false;
+            }
             else builder.Append(targetMembers[i].HeaderName);
 
             if (i < targetMembers.Length - 1)
@@ -46,8 +50,29 @@ internal static class SerializeCodeGenerator
         builder.AppendFormatted($$"""
             {context.NewLine}");
                     }
+                    else
+                    {
 
             """);
+
+        if(canMustNoQuote)
+        {
+            builder.Append("            writer.Write($\"");
+            for (var i = 0; i < targetMembers.Length; i++)
+            {
+                builder.Append(targetMembers[i].HeaderName);
+
+                if (i < targetMembers.Length - 1)
+                    builder.Append(',');
+            }
+            builder.Append("{context.NewLine}\");\n");
+        }
+        else
+        {
+            builder.Append("            global::Oucc.AotCsv.AotCsvException.ThrowMustNoQuoteException();\n");
+        }
+
+        builder.Append("        }\n");
     }
     #endregion 
 
