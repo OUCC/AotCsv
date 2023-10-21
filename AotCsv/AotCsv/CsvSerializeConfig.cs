@@ -8,9 +8,27 @@ using Oucc.AotCsv.GeneratorHelpers;
 
 namespace Oucc.AotCsv;
 
-public record CsvSerializeConfig(QuoteOption QuoteOption, CultureInfo CultureInfo)
+public record CsvSerializeConfig
 {
-    public CsvSerializeConfig(CultureInfo cultureInfo) : this(QuoteOption.ShouldQuote, cultureInfo)
+    public QuoteOption QuoteOption { get; init; }
+    public NewLineOption NewLineOption { get; init; }
+    public CultureInfo CultureInfo { get; init; }
+    public string NewLine { get; init; }
+    public CsvSerializeConfig(CultureInfo cultureInfo) : this(QuoteOption.ShouldQuote, NewLineOption.Environment, cultureInfo) { }
+    public CsvSerializeConfig(QuoteOption quoteOption, CultureInfo cultureInfo) : this(quoteOption, NewLineOption.Environment, cultureInfo) { }
+
+    public CsvSerializeConfig(QuoteOption quoteOption, NewLineOption newLineOption, CultureInfo cultureInfo)
     {
+        QuoteOption = quoteOption;
+        NewLineOption = newLineOption;
+        CultureInfo = cultureInfo;
+        NewLine = newLineOption switch
+        {
+            NewLineOption.Environment => Environment.NewLine,
+            NewLineOption.CR => "\r",
+            NewLineOption.LF => "\n",
+            NewLineOption.CRLF => "\r\n",
+            _ => "\n"
+        };
     }
 }
