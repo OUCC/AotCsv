@@ -15,7 +15,7 @@ internal static class SerializeCodeGenerator
         builder.AppendFormatted($$"""
                     if (context.QuoteOption == {{Constants.QuoteOption}}.MustQuote)
                     {
-                        writer.WriteLine("
+                        writer.Write($"
             """);
 
         for (var i = 0; i < targetMembers.Length; i++)
@@ -26,11 +26,11 @@ internal static class SerializeCodeGenerator
         }
 
         builder.AppendFormatted($$"""
-            ");
+            {context.NewLine}");
                     }
                     else
                     {
-                        writer.WriteLine("
+                        writer.Write($"
             """);
 
 
@@ -44,7 +44,7 @@ internal static class SerializeCodeGenerator
         }
 
         builder.AppendFormatted($$"""
-            ");
+            {context.NewLine}");
                     }
 
             """);
@@ -134,7 +134,7 @@ internal static class SerializeCodeGenerator
 
         builder.Append("""
 
-                        writer.WriteLine();
+                        writer.Write(config.NewLine);
                     }
                     finally
                     {
