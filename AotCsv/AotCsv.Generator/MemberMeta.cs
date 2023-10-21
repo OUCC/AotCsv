@@ -24,7 +24,12 @@ internal class MemberMeta
         State = MemberState;
         Type = typeSymbol;
         IsNullableStruct = typeSymbol.EqualsByMetadataName(new[] { "System", "Nullable`1" });
-        TypeWithoutNullable = IsNullableStruct ? ((INamedTypeSymbol)typeSymbol).TypeArguments[0] : typeSymbol;
+        InnerType = IsNullableStruct ? ((INamedTypeSymbol)typeSymbol).TypeArguments[0] : typeSymbol;
+        IsTypeParameter = InnerType is ITypeParameterSymbol;
+
+        SymbolName = symbol.ToDisplayString(SymbolFormat.NameOnly);
+        TypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        InnerTypeName = InnerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         var attributes = symbol.GetAttributes();
         var nameAttribute = attributes.FirstOrDefault(a => a.AttributeClass.EqualsByMetadataName(new[] { "Oucc", "AotCsv", "Attributes", "CsvNameAttribute" }));
@@ -43,24 +48,35 @@ internal class MemberMeta
 
     public ITypeSymbol Type { get; }
 
-    public ITypeSymbol TypeWithoutNullable { get; }
+    /// <summary>
+    /// Nullable&lt;T&gt; の T の型 そうでない場合は <see cref="Type"/>
+    /// </summary>
+    public ITypeSymbol InnerType { get; }
+
+    public string SymbolName { get; }
+
+    public string TypeName { get; }
+
+    public string InnerTypeName { get; }
 
     public bool IsNullableStruct { get; }
 
+    public bool IsTypeParameter { get; }
+
     /// <summary>
-    /// Headerの名前 エスケープ済み
+    /// Headerの名前 文字列リテラル用エスケープ済み
     /// </summary>
     public string HeaderName { get; }
 
     public uint? Index { get; }
 
     /// <summary>
-    /// CsvFormatAttribute の値 エスケープ済み
+    /// CsvFormatAttribute の値 文字列リテラル用エスケープ済み
     /// </summary>
     public string? Format { get; }
 
     /// <summary>
-    /// CsvDateTimeFormatAttribute の値 エスケープ済み
+    /// CsvDateTimeFormatAttribute の値 文字列リテラル用エスケープ済み
     /// </summary>
     public (string?, DateTimeStyles) DateTimeFormat { get; }
 
