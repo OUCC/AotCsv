@@ -67,33 +67,33 @@ internal static class SerializeCodeGenerator
 
         for (var i = 0; i < targetMembers.Length; i++)
         {
-            var symbol = targetMembers[i].Symbol;
-            var typeSymbol = targetMembers[i].Type;
+            var member = targetMembers[i];
+            var typeSymbol = member.Type;
 
             // string(?)の時
-            if (typeSymbol.Equals(reference.String, SymbolEqualityComparer.Default))
+            if (member.Type.Equals(reference.String, SymbolEqualityComparer.Default))
             {
-                NullableStringSerializeCodegen(builder, symbol.Name);
+                NullableStringSerializeCodegen(builder, member.SymbolName);
             }
             // struct?のとき
-            else if (targetMembers[i].IsNullableStruct)
+            else if (member.IsNullableStruct)
             {
-                var typeParameter = targetMembers[i].TypeWithoutNullable;
+                var typeParameter = member.InnerType;
                 if (typeParameter.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, symbol, reference, true);
+                    DateTimeSerializeCodegen(builder, member, reference, true);
                 }
                 else if (typeParameter.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
                 {
-                    NullableBooleanSerializeCodegen(builder, symbol.Name);
+                    NullableBooleanSerializeCodegen(builder, member.SymbolName);
                 }
                 else if (typeParameter.Equals(reference.Char, SymbolEqualityComparer.IncludeNullability))
                 {
-                    NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name, true);
+                    NullableStructISpanFormattableSerializeCodegen(builder, member.SymbolName, true);
                 }
                 else
                 {
-                    NullableStructISpanFormattableSerializeCodegen(builder, symbol.Name);
+                    NullableStructISpanFormattableSerializeCodegen(builder, member.SymbolName);
                 }
             }
             // class? と struct制約のない型パラメータ
@@ -101,25 +101,25 @@ internal static class SerializeCodeGenerator
                      && typeSymbol.IsReferenceType
                      || typeSymbol is ITypeParameterSymbol parameterSymbol && !parameterSymbol.HasValueTypeConstraint && !parameterSymbol.HasReferenceTypeConstraint)
             {
-                NullableClassISpanFormattableSerializeCodegen(builder, symbol.Name);
+                NullableClassISpanFormattableSerializeCodegen(builder, member.SymbolName);
             }
             else
             {
                 if (typeSymbol.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, symbol, reference, false);
+                    DateTimeSerializeCodegen(builder, member, reference, false);
                 }
                 else if (typeSymbol.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
                 {
-                    BooleanSerializeCodegen(builder, symbol.Name);
+                    BooleanSerializeCodegen(builder, member.SymbolName);
                 }
                 else if (typeSymbol.Equals(reference.Char, SymbolEqualityComparer.IncludeNullability))
                 {
-                    ISpanFormattableSerializeCodegen (builder, symbol.Name, true);
+                    ISpanFormattableSerializeCodegen(builder, member.SymbolName, true);
                 }
                 else
                 {
-                    ISpanFormattableSerializeCodegen(builder, symbol.Name);
+                    ISpanFormattableSerializeCodegen(builder, member.SymbolName);
                 }
             }
 
@@ -179,16 +179,16 @@ internal static class SerializeCodeGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void DateTimeSerializeCodegen(StringBuilder builder, ISymbol propertySymbol, ReferenceSymbols reference, bool nullable)
+    private static void DateTimeSerializeCodegen(StringBuilder builder, MemberMeta memberMeta, ReferenceSymbols reference, bool nullable)
     {
-        var attributes = propertySymbol.GetAttributes();
+        var attributes = memberMeta.Symbol.GetAttributes();
         if (attributes.IsEmpty)
         {
             if (nullable)
             {
-                NullableStructISpanFormattableSerializeCodegen(builder, propertySymbol.Name);
+                NullableStructISpanFormattableSerializeCodegen(builder, memberMeta.SymbolName);
             }
-            else ISpanFormattableSerializeCodegen(builder, propertySymbol.Name);
+            else ISpanFormattableSerializeCodegen(builder, memberMeta.SymbolName);
         }
         else
         {
@@ -198,11 +198,11 @@ internal static class SerializeCodeGenerator
                 string format = (string?)formatAttribute.ConstructorArguments[0].Value ?? "";
                 if (nullable)
                 {
-                    NullableDateTimeSerializeCodegenWithFormat(builder, propertySymbol.Name, format);
+                    NullableDateTimeSerializeCodegenWithFormat(builder, memberMeta.SymbolName, format);
                 }
                 else
                 {
-                    DateTimeSerializeCodegenWithFormat(builder, propertySymbol.Name, format);
+                    DateTimeSerializeCodegenWithFormat(builder, memberMeta.SymbolName, format);
                 }
             }
         }
@@ -321,7 +321,7 @@ internal static class SerializeCodeGenerator
 
                         if (value.{{name}} is not null)
                         {
-                            if ({{(isChar ? $"((ISpanFormattable)value.{name}.Value)": $"value.{name}.Value")}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                            if ({{(isChar ? $"((ISpanFormattable)value.{name}.Value)" : $"value.{name}.Value")}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                             }

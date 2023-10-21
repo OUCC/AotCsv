@@ -39,10 +39,7 @@ public class SerializerGenerator : IIncrementalGenerator
         var reference = new ReferenceSymbols(compilation);
         var targets = GetTargetMembers(targetSymbol, reference, cancellationToken);
         var containingTypes = GetTargetSymbolContainingTypes(targetSymbol, cancellationToken);
-        var helperClassName = targetSymbol.Arity == 0
-            ? "Helper"
-            : string.Concat("Helper<", string.Join(", ", targetSymbol.TypeParameters.Select(t => t.ToDisplayString(SymbolFormat.NameOnly))), ">");
-        var fullHelperClassName = string.Concat(targetSymbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), ".", helperClassName);
+        var targetTypeMeta = new TargetTypeMeta(targetSymbol);
 
         cancellationToken.ThrowIfCancellationRequested();
         builder.Append("""
@@ -87,16 +84,16 @@ public class SerializerGenerator : IIncrementalGenerator
 
            """);
 
-        DeserializeCodeGenerator.WriteHeaderCode(builder, targets, targetTypeName, fullHelperClassName, cancellationToken);
+        DeserializeCodeGenerator.WriteHeaderCode(builder, targetTypeMeta, targets, cancellationToken);
 
-        DeserializeCodeGenerator.WriteBodyCode(builder, targets, targetSymbol, reference, fullHelperClassName, cancellationToken);
+        DeserializeCodeGenerator.WriteBodyCode(builder, targetTypeMeta, targets, reference, cancellationToken);
 
         for (int i = 0; i < containingTypes.Count + 1; i++)
         {
             builder.Append("}\n");
         }
 
-        WriteMetadata(builder, helperClassName, targetTypeName, targetSymbol, targets, cancellationToken);
+        WriteMetadata(builder, targetTypeMeta, targets, cancellationToken);
 
         builder.Append("#nullable restore\n");
         var result = builder.ToString();
@@ -104,16 +101,16 @@ public class SerializerGenerator : IIncrementalGenerator
         context.AddSource(targetSymbol.Name + ".g.cs", result);
     }
 
-    private static void WriteMetadata(StringBuilder builder, string className, string targetTypeName, INamedTypeSymbol targetType, MemberMeta[] members, CancellationToken cancellationToken)
+    private static void WriteMetadata(StringBuilder builder, TargetTypeMeta targetType, MemberMeta[] members, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         builder.AppendFormatted($$"""
-            file static class {{className}}
+            file static class {{targetType.HelperClassName}}
             """);
-        if (targetType.Arity > 0)
+        if (targetType.Type.Arity > 0)
         {
-            foreach (var typePrameter in targetType.TypeParameters)
+            foreach (var typePrameter in targetType.Type.TypeParameters)
             {
                 if (typePrameter.ConstraintTypes.Length == 0
                     && !typePrameter.HasNotNullConstraint
@@ -169,7 +166,7 @@ public class SerializerGenerator : IIncrementalGenerator
 
             {
                 public static global::Oucc.AotCsv.MappingMetadata MappingMetadata => new(
-                        typeof({{targetTypeName}}),
+                        typeof({{targetType.Name}}),
                         global::System.Collections.Immutable.ImmutableArray.Create<global::Oucc.AotCsv.MemberMetadata>(
 
             """);
