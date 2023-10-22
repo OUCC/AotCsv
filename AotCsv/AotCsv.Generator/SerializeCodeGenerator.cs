@@ -20,7 +20,7 @@ internal static class SerializeCodeGenerator
 
         for (var i = 0; i < targetMembers.Length; i++)
         {
-            builder.AppendFormatted($"\"\"{targetMembers[i].HeaderName.Replace("\"\"","\"\"\"\"")}\"\"");
+            builder.AppendFormatted($"\"\"{targetMembers[i].HeaderName.Replace("\"\"", "\"\"\"\"")}\"\"");
             if (i < targetMembers.Length - 1)
                 builder.Append(',');
         }
@@ -55,7 +55,7 @@ internal static class SerializeCodeGenerator
 
             """);
 
-        if(canMustNoQuote)
+        if (canMustNoQuote)
         {
             builder.Append("            writer.Write($\"");
             for (var i = 0; i < targetMembers.Length; i++)
@@ -106,7 +106,7 @@ internal static class SerializeCodeGenerator
                 var typeParameter = member.InnerType;
                 if (typeParameter.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, member, reference, true);
+                    DateTimeSerializeCodegen(builder, member, true);
                 }
                 else if (typeParameter.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
                 {
@@ -114,7 +114,7 @@ internal static class SerializeCodeGenerator
                 }
                 else if (typeParameter.Equals(reference.Char, SymbolEqualityComparer.IncludeNullability))
                 {
-                    NullableStructISpanFormattableSerializeCodegen(builder, member.SymbolName, true);
+                    NullableStructISpanFormattableSerializeCodegen(builder, member.SymbolName);
                 }
                 else
                 {
@@ -132,7 +132,7 @@ internal static class SerializeCodeGenerator
             {
                 if (typeSymbol.Equals(reference.DateTime, SymbolEqualityComparer.IncludeNullability))
                 {
-                    DateTimeSerializeCodegen(builder, member, reference, false);
+                    DateTimeSerializeCodegen(builder, member, false);
                 }
                 else if (typeSymbol.Equals(reference.Boolean, SymbolEqualityComparer.IncludeNullability))
                 {
@@ -140,7 +140,7 @@ internal static class SerializeCodeGenerator
                 }
                 else if (typeSymbol.Equals(reference.Char, SymbolEqualityComparer.IncludeNullability))
                 {
-                    ISpanFormattableSerializeCodegen(builder, member.SymbolName, true);
+                    ISpanFormattableSerializeCodegen(builder, member.SymbolName);
                 }
                 else
                 {
@@ -204,10 +204,10 @@ internal static class SerializeCodeGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void DateTimeSerializeCodegen(StringBuilder builder, MemberMeta memberMeta, ReferenceSymbols reference, bool nullable)
+    private static void DateTimeSerializeCodegen(StringBuilder builder, MemberMeta memberMeta, bool nullable)
     {
-        var attributes = memberMeta.Symbol.GetAttributes();
-        if (attributes.IsEmpty)
+        (var format, _) = memberMeta.DateTimeFormat;
+        if (format is null)
         {
             if (nullable)
             {
@@ -217,19 +217,15 @@ internal static class SerializeCodeGenerator
         }
         else
         {
-            var formatAttribute = attributes.Where(x => x.AttributeClass!.Equals(reference.CsvDateTimeFormatAttribute, SymbolEqualityComparer.IncludeNullability)).First();
-            if (formatAttribute != null)
+            if (nullable)
             {
-                string format = (string?)formatAttribute.ConstructorArguments[0].Value ?? "";
-                if (nullable)
-                {
-                    NullableDateTimeSerializeCodegenWithFormat(builder, memberMeta.SymbolName, format);
-                }
-                else
-                {
-                    DateTimeSerializeCodegenWithFormat(builder, memberMeta.SymbolName, format);
-                }
+                NullableDateTimeSerializeCodegenWithFormat(builder, memberMeta.SymbolName, format);
             }
+            else
+            {
+                DateTimeSerializeCodegenWithFormat(builder, memberMeta.SymbolName, format);
+            }
+
         }
     }
 
@@ -238,14 +234,14 @@ internal static class SerializeCodeGenerator
     {
         builder.AppendFormatted($$"""
 
-                        if (value.{{name}}.TryFormat(bufferSpan, out charsWritten, "{{format}}", config.CultureInfo))
+                        if (value.{{name}}.TryFormat(bufferSpan, out charsWritten, @"{{format}}", config.CultureInfo))
                         {
                             global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                         }
                         else
                         {
                             char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                            while (!value.{{name}}.TryFormat(tmp, out charsWritten, "{{format}}", config.CultureInfo))
+                            while (!value.{{name}}.TryFormat(tmp, out charsWritten, @"{{format}}", config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                             }
@@ -263,14 +259,14 @@ internal static class SerializeCodeGenerator
 
                         if (value.{{name}} is not null)
                         {
-                            if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten, "{{format}}", config.CultureInfo))
+                            if (value.{{name}}.Value.TryFormat(bufferSpan, out charsWritten, @"{{format}}", config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                             }
                             else
                             {
                                 char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                                while (!value.{{name}}.Value.TryFormat(tmp, out charsWritten, "{{format}}", config.CultureInfo))
+                                while (!value.{{name}}.Value.TryFormat(tmp, out charsWritten, @"{{format}}", config.CultureInfo))
                                 {
                                     global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                                 }
@@ -287,18 +283,18 @@ internal static class SerializeCodeGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ISpanFormattableSerializeCodegen(StringBuilder builder, string name, bool isChar = false)
+    private static void ISpanFormattableSerializeCodegen(StringBuilder builder, string name)
     {
         builder.AppendFormatted($$"""
 
-                        if ({{(isChar ? $"((ISpanFormattable)value.{name})" : $"value.{name}")}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                        if (global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryFormat(value.{{name}}, bufferSpan, out charsWritten, default, config.CultureInfo))
                         {
                             global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                         }
                         else
                         {
                             char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                            while (!{{(isChar ? $"((ISpanFormattable)value.{name})" : $"value.{name}")}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
+                            while (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryFormat(value.{{name}}, tmp, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                             }
@@ -316,14 +312,14 @@ internal static class SerializeCodeGenerator
 
                         if (value.{{name}} is not null)
                         {
-                            if (value.{{name}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                            if (global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryFormat(value.{{name}},bufferSpan, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                             }
                             else
                             {
                                 char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                                while (!value.{{name}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
+                                while (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryFormat(value.{{name}}, tmp, out charsWritten, default, config.CultureInfo))
                                 {
                                     global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                                 }
@@ -340,20 +336,20 @@ internal static class SerializeCodeGenerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void NullableStructISpanFormattableSerializeCodegen(StringBuilder builder, string name, bool isChar = false)
+    private static void NullableStructISpanFormattableSerializeCodegen(StringBuilder builder, string name)
     {
         builder.AppendFormatted($$"""
 
                         if (value.{{name}} is not null)
                         {
-                            if ({{(isChar ? $"((ISpanFormattable)value.{name}.Value)" : $"value.{name}.Value")}}.TryFormat(bufferSpan, out charsWritten, default, config.CultureInfo))
+                            if (global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryFormat(value.{{name}}.Value, bufferSpan, out charsWritten, default, config.CultureInfo))
                             {
                                 global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.WriteWithCheck(writer, bufferSpan, config, charsWritten);
                             }
                             else
                             {
                                 char[] tmp = global::System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * 2);
-                                while (!{{(isChar ? $"((ISpanFormattable)value.{name}.Value)" : $"value.{name}.Value")}}.TryFormat(tmp, out charsWritten, default, config.CultureInfo))
+                                while (!global::Oucc.AotCsv.GeneratorHelpers.StaticInterfaceHelper.TryFormat(value.{{name}}.Value, tmp, out charsWritten, default, config.CultureInfo))
                                 {
                                     global::Oucc.AotCsv.GeneratorHelpers.CsvSerializeHelpers.EnsureBuffer(ref tmp);
                                 }
