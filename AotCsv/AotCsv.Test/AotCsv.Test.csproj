@@ -6,6 +6,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <RootNamespace>Oucc.AotCsv.Generator</RootNamespace>
+    <NoWarn>1701;1702;IDE0290</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'($TargetFramework)' != 'net7.0'">

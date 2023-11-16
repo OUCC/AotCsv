@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Oucc.AotCsv</RootNamespace>
+    <NoWarn>1701;1702;IDE0290</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'($TargetFramework)' != 'net7.0'">
